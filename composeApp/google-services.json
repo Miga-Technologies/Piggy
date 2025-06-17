@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "490490243020",
+    "project_id": "miga-piggy",
+    "storage_bucket": "miga-piggy.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:490490243020:android:4dc2f9eedc049fac529f69",
+        "android_client_info": {
+          "package_name": "com.miga.piggy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhQo50BMutQY0cViqW1EbqsVrr7CPePpc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
