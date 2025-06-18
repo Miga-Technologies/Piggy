@@ -41,7 +41,7 @@ class HomeScreen : Screen {
             )
 
             Text(
-                text = "Usuário: ${uiState.user?.email ?: "Nenhum"}",
+                text = "Usuário: ${uiState.user?.displayName ?: "Nenhum"}",
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
