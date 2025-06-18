@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -31,7 +32,7 @@ import com.miga.piggy.auth.presentation.viewmodel.AuthViewModel
 import com.miga.piggy.home.presentation.HomeScreen
 import org.koin.compose.koinInject
 
-class AuthScreen : Screen {
+object AuthScreen : Screen {
 
     @Composable
     override fun Content() {
@@ -42,7 +43,7 @@ class AuthScreen : Screen {
 
         LaunchedEffect(uiState.user) {
             if (uiState.user != null) {
-                navigator.push(HomeScreen())
+                navigator.replaceAll(HomeScreen)
             }
         }
 
@@ -84,7 +85,9 @@ class AuthScreen : Screen {
 
             Button(
                 onClick = { viewModel.login() },
-                enabled = !uiState.isLoading,
+                enabled = !uiState.isLoading &&
+                        formState.email.isNotBlank() &&
+                        formState.password.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (uiState.isLoading) {
@@ -100,7 +103,7 @@ class AuthScreen : Screen {
             Spacer(modifier = Modifier.height(16.dp))
 
             TextButton(
-                onClick = { navigator.push(RegisterScreen()) }
+                onClick = { navigator.push(RegisterScreen) }
             ) {
                 Text("Não tem conta? Cadastre-se")
             }
@@ -108,11 +111,15 @@ class AuthScreen : Screen {
             uiState.error?.let { error ->
                 Spacer(modifier = Modifier.height(16.dp))
                 Card(
-                    modifier = Modifier.background(MaterialTheme.colorScheme.error),
+                    colors = CardColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                        disabledContainerColor = MaterialTheme.colorScheme.error,
+                        disabledContentColor = MaterialTheme.colorScheme.onError
+                    )
                 ) {
                     Text(
                         text = error,
-                        color = MaterialTheme.colorScheme.onError,
                         modifier = Modifier.padding(16.dp)
                     )
                 }

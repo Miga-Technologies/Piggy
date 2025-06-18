@@ -141,39 +141,31 @@ class AuthViewModel(
         _formState.value = _formState.value.copy(displayName = displayName, displayNameError = null)
     }
 
-    fun toggleMode() {
-        _uiState.value = _uiState.value.copy(isLoginMode = !_uiState.value.isLoginMode)
-        clearForm()
-    }
-
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
-    }
-
     private fun validateForm(form: LoginFormState, isLogin: Boolean): Boolean {
         var isValid = true
-        val updatedForm = form.copy(
-            emailError = null,
-            passwordError = null,
-            displayNameError = null
-        )
+        var emailError: String? = null
+        var passwordError: String? = null
+        var displayNameError: String? = null
 
         if (form.email.isBlank()) {
-            updatedForm.copy(emailError = "Email é obrigatório")
+            emailError = "Email é obrigatório"
             isValid = false
         }
-
         if (form.password.length < 6) {
-            updatedForm.copy(passwordError = "Senha deve ter pelo menos 6 caracteres")
+            passwordError = "Senha deve ter pelo menos 6 caracteres"
             isValid = false
         }
-
         if (!isLogin && form.displayName.isBlank()) {
-            updatedForm.copy(displayNameError = "Nome é obrigatório")
+            displayNameError = "Nome é obrigatório"
             isValid = false
         }
 
-        _formState.value = updatedForm
+        _formState.value = form.copy(
+            emailError = emailError,
+            passwordError = passwordError,
+            displayNameError = displayNameError
+        )
+
         return isValid
     }
 

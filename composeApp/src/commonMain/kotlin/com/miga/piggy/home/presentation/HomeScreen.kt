@@ -17,10 +17,11 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.miga.piggy.auth.presentation.ui.AuthScreen
 import com.miga.piggy.auth.presentation.viewmodel.AuthViewModel
 import org.koin.compose.koinInject
 
-class HomeScreen : Screen {
+object HomeScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
@@ -48,7 +49,7 @@ class HomeScreen : Screen {
             Button(
                 onClick = {
                     viewModel.logout()
-                    navigator.pop()
+                    navigator.replaceAll(AuthScreen)
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {

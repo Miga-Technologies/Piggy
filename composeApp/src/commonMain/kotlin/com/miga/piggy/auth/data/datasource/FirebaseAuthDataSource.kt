@@ -18,7 +18,7 @@ class FirebaseAuthDataSource : AuthDataSource {
     override suspend fun register(email: String, password: String, displayName: String): User {
         val result = auth.createUserWithEmailAndPassword(email, password)
         val firebaseUser = result.user ?: throw Exception("Erro ao criar usuário")
-        firebaseUser.updateProfile()
+        firebaseUser.updateProfile(displayName = displayName)
         return firebaseUser.toUser()
     }
 

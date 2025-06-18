@@ -13,7 +13,7 @@ import org.koin.compose.KoinContext
 fun App() {
     KoinContext {
         MaterialTheme {
-            Navigator(AuthScreen()) { navigator ->
+            Navigator(AuthScreen) { navigator ->
                 SlideTransition(navigator)
             }
         }
