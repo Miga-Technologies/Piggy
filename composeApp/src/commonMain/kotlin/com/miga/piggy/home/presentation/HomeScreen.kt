@@ -22,25 +22,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.automirrored.rounded.Logout
-import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.icons.automirrored.rounded.TrendingUp
-import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Category
-import androidx.compose.material.icons.rounded.CreditCard
-import androidx.compose.material.icons.rounded.List
-import androidx.compose.material.icons.rounded.Payment
-import androidx.compose.material.icons.rounded.PieChart
 import androidx.compose.material.icons.rounded.Receipt
 import androidx.compose.material.icons.rounded.Remove
-import androidx.compose.material.icons.rounded.Send
-import androidx.compose.material.icons.rounded.TrendingUp
-import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -62,7 +51,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.miga.piggy.auth.presentation.ui.AuthScreen
 import com.miga.piggy.auth.presentation.viewmodel.AuthViewModel
@@ -216,14 +204,25 @@ private fun MenuGrid() {
         MenuItem("Categorias", Icons.Rounded.Category)
     )
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.height(200.dp)
+    val rows = menuItems.chunked(2)
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(menuItems.size) { item ->
-            MenuItemCard(menuItems[item])
+        rows.forEach { rowItems ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                rowItems.forEach { item ->
+                    Box(modifier = Modifier.weight(1f)) {
+                        MenuItemCard(item)
+                    }
+                }
+                if (rowItems.size < 2) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
         }
     }
 }
@@ -268,7 +267,7 @@ private fun MenuItemCard(item: MenuItem) {
 }
 
 @Composable
-private fun ExpenseChartCard(gastosPorCategoria: Map<String, Double>) {
+private fun ExpenseChartCard(expensesByCategory: Map<String, Double>) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -280,9 +279,9 @@ private fun ExpenseChartCard(gastosPorCategoria: Map<String, Double>) {
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            if (gastosPorCategoria.isNotEmpty()) {
+            if (expensesByCategory.isNotEmpty()) {
                 // Gráfico simples usando Canvas (sem dependências externas)
-                SimpleBarChart(gastosPorCategoria)
+                SimpleBarChart(expensesByCategory)
             } else {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -359,8 +358,8 @@ private fun SimpleBarChart(data: Map<String, Double>) {
 
 @Composable
 private fun FinancialSummary() {
-    val totalGastos = 1720.0
-    val totalReceitas = 4567.50
+    val totalExpenses = 1720.0
+    val totalRevenue = 4567.50
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -386,7 +385,7 @@ private fun FinancialSummary() {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "R$ ${formatDouble(totalReceitas)}",
+                        text = "R$ ${formatDouble(totalRevenue)}",
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF4CAF50)
@@ -400,7 +399,7 @@ private fun FinancialSummary() {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "R$ ${formatDouble(totalGastos)}",
+                        text = "R$ ${formatDouble(totalExpenses)}",
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFFFF5722)
@@ -420,10 +419,10 @@ private fun FinancialSummary() {
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "R$ ${formatDouble(totalReceitas - totalGastos)}",
+                    text = "R$ ${formatDouble(totalRevenue - totalExpenses)}",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
-                    color = if (totalReceitas - totalGastos >= 0)
+                    color = if (totalRevenue - totalExpenses >= 0)
                         Color(0xFF4CAF50) else Color(0xFFFF5722)
                 )
             }

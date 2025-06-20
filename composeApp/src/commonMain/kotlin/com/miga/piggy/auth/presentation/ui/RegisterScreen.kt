@@ -1,6 +1,7 @@
 package com.miga.piggy.auth.presentation.ui
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,10 +9,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Email
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardColors
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -46,93 +54,120 @@ object RegisterScreen : Screen {
             }
         }
 
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.05f))
         ) {
-            Text(
-                text = "Cadastro",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 32.dp)
-            )
-
-            OutlinedTextField(
-                value = formState.email,
-                onValueChange = viewModel::updateEmail,
-                label = { Text("Email") },
-                isError = formState.emailError != null,
-                supportingText = formState.emailError?.let { { Text(it) } },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = formState.password,
-                onValueChange = viewModel::updatePassword,
-                label = { Text("Senha") },
-                visualTransformation = PasswordVisualTransformation(),
-                isError = formState.passwordError != null,
-                supportingText = formState.passwordError?.let { { Text(it) } },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = formState.displayName,
-                onValueChange = viewModel::updateDisplayName,
-                label = { Text("Nome") },
-                isError = formState.displayNameError != null,
-                supportingText = formState.displayNameError?.let { { Text(it) } },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = { viewModel.register() },
-                enabled = !uiState.isLoading &&
-                        formState.displayName.isNotBlank() &&
-                        formState.email.isNotBlank() &&
-                        formState.password.isNotBlank(),
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.Center)
             ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text("Cadastrar")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextButton(
-                onClick = { navigator.push(AuthScreen) }
-            ) {
-                Text("Já tem conta? Faça login")
-            }
-
-            uiState.error?.let { error ->
-                Spacer(modifier = Modifier.height(16.dp))
                 Card(
-                    colors = CardColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError,
-                        disabledContainerColor = MaterialTheme.colorScheme.error,
-                        disabledContentColor = MaterialTheme.colorScheme.onError
-                    )
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                    shape = RoundedCornerShape(24.dp)
                 ) {
-                    Text(
-                        text = error,
-                        modifier = Modifier.padding(16.dp)
-                    )
+                    Column(
+                        modifier = Modifier
+                            .padding(32.dp)
+                            .fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Crie sua conta",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = MaterialTheme.typography.titleSmall.fontWeight,
+                            modifier = Modifier.padding(bottom = 24.dp)
+                        )
+
+                        OutlinedTextField(
+                            value = formState.displayName,
+                            onValueChange = viewModel::updateDisplayName,
+                            label = { Text("Nome") },
+                            leadingIcon = { Icon(Icons.Rounded.Person, contentDescription = null) },
+                            isError = formState.displayNameError != null,
+                            supportingText = formState.displayNameError?.let { { Text(it) } },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        OutlinedTextField(
+                            value = formState.email,
+                            onValueChange = viewModel::updateEmail,
+                            label = { Text("Email") },
+                            leadingIcon = { Icon(Icons.Rounded.Email, contentDescription = null) },
+                            isError = formState.emailError != null,
+                            supportingText = formState.emailError?.let { { Text(it) } },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        OutlinedTextField(
+                            value = formState.password,
+                            onValueChange = viewModel::updatePassword,
+                            label = { Text("Senha") },
+                            leadingIcon = { Icon(Icons.Rounded.Lock, contentDescription = null) },
+                            visualTransformation = PasswordVisualTransformation(),
+                            isError = formState.passwordError != null,
+                            supportingText = formState.passwordError?.let { { Text(it) } },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Button(
+                            onClick = { viewModel.register() },
+                            enabled = !uiState.isLoading &&
+                                    formState.displayName.isNotBlank() &&
+                                    formState.email.isNotBlank() &&
+                                    formState.password.isNotBlank(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            if (uiState.isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Text("Cadastrar")
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        TextButton(
+                            onClick = { navigator.push(AuthScreen) }
+                        ) {
+                            Text("Já tem conta? Faça login")
+                        }
+
+                        uiState.error?.let { error ->
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                    contentColor = MaterialTheme.colorScheme.onError
+                                ),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                            ) {
+                                Text(
+                                    text = error,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
