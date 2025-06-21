@@ -14,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -47,12 +46,6 @@ object RegisterScreen : Screen {
         val viewModel: AuthViewModel = koinInject()
         val uiState by viewModel.uiState.collectAsState()
         val formState by viewModel.formState.collectAsState()
-
-        LaunchedEffect(uiState.user) {
-            if (uiState.user != null) {
-                navigator.replaceAll(HomeScreen)
-            }
-        }
 
         Box(
             modifier = Modifier
@@ -123,7 +116,10 @@ object RegisterScreen : Screen {
                         Spacer(modifier = Modifier.height(24.dp))
 
                         Button(
-                            onClick = { viewModel.register() },
+                            onClick = {
+                                viewModel.register()
+                                navigator.replaceAll(EmailVerificationScreen)
+                            },
                             enabled = !uiState.isLoading &&
                                     formState.displayName.isNotBlank() &&
                                     formState.email.isNotBlank() &&
@@ -147,7 +143,7 @@ object RegisterScreen : Screen {
                         Spacer(modifier = Modifier.height(16.dp))
 
                         TextButton(
-                            onClick = { navigator.push(AuthScreen) }
+                            onClick = { navigator.replaceAll(AuthScreen) }
                         ) {
                             Text("Já tem conta? Faça login")
                         }

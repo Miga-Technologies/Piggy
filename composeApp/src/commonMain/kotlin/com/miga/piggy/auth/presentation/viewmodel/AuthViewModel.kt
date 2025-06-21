@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.miga.piggy.auth.domain.model.AuthResult
 import com.miga.piggy.auth.domain.model.User
+import com.miga.piggy.auth.domain.usecase.EmailVerificationUseCase
 import com.miga.piggy.auth.domain.usecase.GetCurrentUserUseCase
 import com.miga.piggy.auth.domain.usecase.LoginUseCase
 import com.miga.piggy.auth.domain.usecase.LogoutUseCase
@@ -19,7 +20,8 @@ class AuthViewModel(
     private val loginUseCase: LoginUseCase,
     private val registerUseCase: RegisterUseCase,
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
-    private val logoutUseCase: LogoutUseCase
+    private val logoutUseCase: LogoutUseCase,
+    private val emailVerificationUseCase: EmailVerificationUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -41,11 +43,23 @@ class AuthViewModel(
 
             when (val result = loginUseCase(currentForm.email, currentForm.password)) {
                 is AuthResult.Success -> {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        user = result.data,
-                        error = null
-                    )
+                    val isVerified = emailVerificationUseCase.isEmailVerified()
+                    if (isVerified) {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            user = result.data,
+                            isEmailVerified = true,
+                            error = null
+                        )
+                    } else {
+                        logout()
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            user = null,
+                            isEmailVerified = false,
+                            error = "Por favor, verifique seu e-mail antes de acessar."
+                        )
+                    }
                 }
 
                 is AuthResult.Error -> {
@@ -77,6 +91,7 @@ class AuthViewModel(
                 )
             ) {
                 is AuthResult.Success<User> -> {
+                    emailVerificationUseCase.resendVerificationEmail()
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         user = result.data,
@@ -139,6 +154,49 @@ class AuthViewModel(
 
     fun updateDisplayName(displayName: String) {
         _formState.value = _formState.value.copy(displayName = displayName, displayNameError = null)
+    }
+
+    fun checkEmailVerificationStatus() {
+        viewModelScope.launch {
+            val isVerified = emailVerificationUseCase.isEmailVerified()
+            _uiState.value = _uiState.value.copy(isEmailVerified = isVerified)
+        }
+    }
+
+    fun resendVerificationEmail() {
+        viewModelScope.launch {
+            val success = emailVerificationUseCase.resendVerificationEmail()
+            if (success) {
+                _uiState.value = _uiState.value.copy(verificationEmailSent = true)
+            } else {
+                _uiState.value = _uiState.value.copy(error = "Falha ao reenviar o e-mail.")
+            }
+        }
+    }
+
+    fun checkIfUserIsLoggedAndVerified() {
+        viewModelScope.launch {
+            when (val result = getCurrentUserUseCase()) {
+                is AuthResult.Success -> {
+                    val user = result.data
+                    val isVerified = if (user != null) emailVerificationUseCase.isEmailVerified() else false
+                    _uiState.value = _uiState.value.copy(
+                        user = user,
+                        isEmailVerified = isVerified
+                    )
+                }
+                is AuthResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        user = null,
+                        isEmailVerified = false,
+                        error = result.exception.message
+                    )
+                }
+                is AuthResult.Loading -> {
+                    _uiState.value = _uiState.value.copy(isLoading = true)
+                }
+            }
+        }
     }
 
     private fun validateForm(form: LoginFormState, isLogin: Boolean): Boolean {

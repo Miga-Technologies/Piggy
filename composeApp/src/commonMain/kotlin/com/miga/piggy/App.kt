@@ -7,15 +7,15 @@ import cafe.adriel.voyager.transitions.CrossfadeTransition
 import cafe.adriel.voyager.transitions.ScaleTransition
 import cafe.adriel.voyager.transitions.SlideTransition
 import com.miga.piggy.auth.presentation.ui.AuthScreen
+import com.miga.piggy.splash.SplashScreen
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinContext
 
 @Composable
-@Preview
 fun App() {
     KoinContext {
         MaterialTheme {
-            Navigator(AuthScreen) { navigator ->
+            Navigator(SplashScreen) { navigator ->
                 SlideTransition(navigator)
             }
         }

@@ -53,4 +53,12 @@ class AuthRepositoryImpl(
             AuthResult.Error(e)
         }
     }
+
+    override suspend fun isEmailVerified(): Boolean {
+        return authDataSource.isEmailVerified()
+    }
+
+    override suspend fun sendEmailVerification(): Boolean {
+        return authDataSource.sendEmailVerification()
+    }
 }

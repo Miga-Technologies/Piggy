@@ -46,8 +46,8 @@ object AuthScreen : Screen {
         val uiState by viewModel.uiState.collectAsState()
         val formState by viewModel.formState.collectAsState()
 
-        LaunchedEffect(uiState.user) {
-            if (uiState.user != null) {
+        LaunchedEffect(uiState.user, uiState.isEmailVerified) {
+            if (uiState.user != null && uiState.isEmailVerified == true) {
                 navigator.replaceAll(HomeScreen)
             }
         }

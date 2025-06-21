@@ -4,6 +4,8 @@ import com.miga.piggy.auth.data.datasource.AuthDataSource
 import com.miga.piggy.auth.data.datasource.FirebaseAuthDataSource
 import com.miga.piggy.auth.data.repository.AuthRepositoryImpl
 import com.miga.piggy.auth.domain.repository.AuthRepository
+import com.miga.piggy.auth.domain.usecase.EmailVerificationUseCase
+import com.miga.piggy.auth.domain.usecase.EmailVerificationUseCaseImpl
 import com.miga.piggy.auth.domain.usecase.GetCurrentUserUseCase
 import com.miga.piggy.auth.domain.usecase.GetCurrentUserUseCaseImpl
 import com.miga.piggy.auth.domain.usecase.LoginUseCase
@@ -28,6 +30,7 @@ val appModule = module {
     single<RegisterUseCase> { RegisterUseCaseImpl(get()) }
     single<GetCurrentUserUseCase> { GetCurrentUserUseCaseImpl(get()) }
     single<LogoutUseCase> { LogoutUseCaseImpl(get()) }
+    single<EmailVerificationUseCase> { EmailVerificationUseCaseImpl(get()) }
 
     viewModelOf(::AuthViewModel)
 }

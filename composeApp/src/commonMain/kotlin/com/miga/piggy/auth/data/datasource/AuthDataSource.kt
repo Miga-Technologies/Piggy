@@ -8,4 +8,6 @@ interface AuthDataSource {
     suspend fun getCurrentUser(): User?
     suspend fun logout()
     suspend fun resetPassword(email: String)
+    suspend fun isEmailVerified(): Boolean
+    suspend fun sendEmailVerification(): Boolean
 }

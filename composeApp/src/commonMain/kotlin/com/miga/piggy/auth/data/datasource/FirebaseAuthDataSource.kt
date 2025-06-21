@@ -19,6 +19,7 @@ class FirebaseAuthDataSource : AuthDataSource {
         val result = auth.createUserWithEmailAndPassword(email, password)
         val firebaseUser = result.user ?: throw Exception("Erro ao criar usuário")
         firebaseUser.updateProfile(displayName = displayName)
+        firebaseUser.sendEmailVerification()
         return firebaseUser.toUser()
     }
 
@@ -32,6 +33,21 @@ class FirebaseAuthDataSource : AuthDataSource {
 
     override suspend fun resetPassword(email: String) {
         auth.sendPasswordResetEmail(email)
+    }
+
+    override suspend fun isEmailVerified(): Boolean {
+        val user = auth.currentUser
+        user?.reload()
+        return user?.isEmailVerified == true
+    }
+
+    override suspend fun sendEmailVerification(): Boolean {
+        return try {
+            auth.currentUser?.sendEmailVerification()
+            true
+        } catch (_: Exception) {
+            false
+        }
     }
 }
 
