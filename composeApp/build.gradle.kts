@@ -67,6 +67,11 @@ kotlin {
 
             implementation(libs.firebase.auth)
             implementation(libs.firebase.firestore)
+            
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.contentNegotiation)
+            implementation(libs.ktor.client.logging)
+            implementation(libs.ktor.client.json)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -74,6 +79,8 @@ kotlin {
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+
+            implementation(libs.ktor.client.cio)
         }
     }
 }
