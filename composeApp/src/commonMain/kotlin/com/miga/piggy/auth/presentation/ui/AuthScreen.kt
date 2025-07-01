@@ -35,10 +35,10 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.miga.piggy.auth.presentation.viewmodel.AuthViewModel
 import com.miga.piggy.home.presentation.HomeScreen
+import com.miga.piggy.utils.composables.FixedSizeWrapper
 import org.koin.compose.koinInject
 
 object AuthScreen : Screen {
-
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
@@ -52,104 +52,119 @@ object AuthScreen : Screen {
             }
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.04f))
+        FixedSizeWrapper(
+            maxWidth = 500.dp,
+            maxHeight = 700.dp
         ) {
-            Column(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.Center)
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.04f))
             ) {
-                Card(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                    shape = RoundedCornerShape(24.dp)
+                        .align(Alignment.Center)
                 ) {
-                    Column(
+                    Card(
                         modifier = Modifier
-                            .padding(32.dp)
-                            .fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                        shape = RoundedCornerShape(24.dp)
                     ) {
-                        Text(
-                            text = "Bem-vindo ao Piggy! 🐷",
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = MaterialTheme.typography.titleSmall.fontWeight,
-                            modifier = Modifier.padding(bottom = 24.dp)
-                        )
-
-                        OutlinedTextField(
-                            value = formState.email,
-                            onValueChange = viewModel::updateEmail,
-                            label = { Text("Email") },
-                            leadingIcon = { Icon(Icons.Rounded.Email, contentDescription = null) },
-                            isError = formState.emailError != null,
-                            supportingText = formState.emailError?.let { { Text(it) } },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        OutlinedTextField(
-                            value = formState.password,
-                            onValueChange = viewModel::updatePassword,
-                            label = { Text("Senha") },
-                            leadingIcon = { Icon(Icons.Rounded.Lock, contentDescription = null) },
-                            visualTransformation = PasswordVisualTransformation(),
-                            isError = formState.passwordError != null,
-                            supportingText = formState.passwordError?.let { { Text(it) } },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Button(
-                            onClick = { viewModel.login() },
-                            enabled = !uiState.isLoading &&
-                                    formState.email.isNotBlank() &&
-                                    formState.password.isNotBlank(),
+                        Column(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            shape = RoundedCornerShape(12.dp)
+                                .padding(32.dp)
+                                .fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            if (uiState.isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Text("Entrar")
-                            }
-                        }
+                            Text(
+                                text = "Bem-vindo ao Piggy! 🐷",
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = MaterialTheme.typography.titleSmall.fontWeight,
+                                modifier = Modifier.padding(bottom = 24.dp)
+                            )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                            OutlinedTextField(
+                                value = formState.email,
+                                onValueChange = viewModel::updateEmail,
+                                label = { Text("Email") },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Rounded.Email,
+                                        contentDescription = null
+                                    )
+                                },
+                                isError = formState.emailError != null,
+                                supportingText = formState.emailError?.let { { Text(it) } },
+                                modifier = Modifier.fillMaxWidth()
+                            )
 
-                        TextButton(
-                            onClick = { navigator.push(RegisterScreen) }
-                        ) {
-                            Text("Não tem conta? Cadastre-se")
-                        }
-
-                        uiState.error?.let { error ->
                             Spacer(modifier = Modifier.height(16.dp))
-                            Card(
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.error,
-                                    contentColor = MaterialTheme.colorScheme.onError
-                                ),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+
+                            OutlinedTextField(
+                                value = formState.password,
+                                onValueChange = viewModel::updatePassword,
+                                label = { Text("Senha") },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Rounded.Lock,
+                                        contentDescription = null
+                                    )
+                                },
+                                visualTransformation = PasswordVisualTransformation(),
+                                isError = formState.passwordError != null,
+                                supportingText = formState.passwordError?.let { { Text(it) } },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            Button(
+                                onClick = { viewModel.login() },
+                                enabled = !uiState.isLoading &&
+                                        formState.email.isNotBlank() &&
+                                        formState.password.isNotBlank(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp),
+                                shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text(
-                                    text = error,
-                                    modifier = Modifier.padding(16.dp)
-                                )
+                                if (uiState.isLoading) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Text("Entrar")
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            TextButton(
+                                onClick = { navigator.push(RegisterScreen) }
+                            ) {
+                                Text("Não tem conta? Cadastre-se")
+                            }
+
+                            uiState.error?.let { error ->
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.error,
+                                        contentColor = MaterialTheme.colorScheme.onError
+                                    ),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                                ) {
+                                    Text(
+                                        text = error,
+                                        modifier = Modifier.padding(16.dp)
+                                    )
+                                }
                             }
                         }
                     }

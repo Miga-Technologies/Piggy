@@ -52,6 +52,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.miga.piggy.auth.presentation.ui.AuthScreen
 import com.miga.piggy.auth.presentation.viewmodel.AuthViewModel
+import com.miga.piggy.utils.composables.FixedSizeWrapper
 import org.koin.compose.koinInject
 import kotlin.math.pow
 import kotlin.math.round
@@ -73,77 +74,82 @@ object HomeScreen : Screen {
             "Outros" to 120.0
         )
 
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text("Olá, ${uiState.user?.displayName?.split(" ")?.first() ?: "Usuário"}!")
-                    },
-                    actions = {
-                        IconButton(
-                            onClick = {
-                                viewModel.logout()
-                                navigator.replaceAll(AuthScreen)
+        FixedSizeWrapper(
+            maxWidth = 1200.dp,
+            maxHeight = 800.dp
+        ) {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = {
+                            Text("Olá, ${uiState.user?.displayName?.split(" ")?.first() ?: "Usuário"}!")
+                        },
+                        actions = {
+                            IconButton(
+                                onClick = {
+                                    viewModel.logout()
+                                    navigator.replaceAll(AuthScreen)
+                                }
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Rounded.Logout,
+                                    contentDescription = "Logout"
+                                )
                             }
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.Logout,
-                                contentDescription = "Logout"
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                            actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+                },
+                content = { paddingValues ->
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Card do Saldo
+                        item {
+                            BalanceCard(currentBalance)
+                        }
+
+                        // Menu de Ações
+                        item {
+                            Text(
+                                text = "O que você quer fazer?",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(vertical = 8.dp)
                             )
                         }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                )
-            },
-            content = { paddingValues ->
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Card do Saldo
-                    item {
-                        BalanceCard(currentBalance)
-                    }
 
-                    // Menu de Ações
-                    item {
-                        Text(
-                            text = "O que você quer fazer?",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-                    }
+                        item {
+                            MenuGrid()
+                        }
 
-                    item {
-                        MenuGrid()
-                    }
+                        // Gráfico de Gastos
+                        item {
+                            Text(
+                                text = "Gastos por categoria",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
 
-                    // Gráfico de Gastos
-                    item {
-                        Text(
-                            text = "Gastos por categoria",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-                    }
+                        item {
+                            ExpenseChartCard(expensesByCategory)
+                        }
 
-                    item {
-                        ExpenseChartCard(expensesByCategory)
-                    }
-
-                    item {
-                        FinancialSummary()
+                        item {
+                            FinancialSummary()
+                        }
                     }
                 }
-            }
-        )
+            )
+        }
     }
 }
 
