@@ -1,4 +1,4 @@
-package com.miga.piggy.home.presentation
+package com.miga.piggy.home.presentation.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,6 +28,7 @@ import androidx.compose.material.icons.rounded.Receipt
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -38,73 +39,88 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.miga.piggy.auth.presentation.ui.AuthScreen
 import com.miga.piggy.auth.presentation.viewmodel.AuthViewModel
-import com.miga.piggy.utils.composables.FixedSizeWrapper
+import com.miga.piggy.home.presentation.viewmodel.HomeViewModel
+import com.miga.piggy.balance.presentation.ui.EditBalanceScreen
+import com.miga.piggy.home.domain.entity.Category
+import com.miga.piggy.home.presentation.ui.helper.MenuItem
+import com.miga.piggy.transaction.presentation.ui.AddExpenseScreen
+import com.miga.piggy.transaction.presentation.ui.AddIncomeScreen
+import com.miga.piggy.utils.formatters.formatDouble
+import com.miga.piggy.utils.parsers.ColorParser
 import org.koin.compose.koinInject
-import kotlin.math.pow
-import kotlin.math.round
 
 object HomeScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val viewModel: AuthViewModel = koinInject()
-        val uiState by viewModel.uiState.collectAsState()
+        val authViewModel: AuthViewModel = koinInject()
+        val homeViewModel: HomeViewModel = koinInject()
+        val authUiState by authViewModel.uiState.collectAsState()
+        val homeUiState by homeViewModel.uiState.collectAsState()
 
-        val currentBalance = 2847.50
-        val expensesByCategory = mapOf(
-            "Alimentação" to 850.0,
-            "Transporte" to 320.0,
-            "Lazer" to 180.0,
-            "Saúde" to 250.0,
-            "Outros" to 120.0
-        )
+        // Verificar se usuário está logado
+        LaunchedEffect(authUiState.user) {
+            if (authUiState.user == null) {
+                navigator.replaceAll(AuthScreen)
+            }
+        }
 
-        FixedSizeWrapper(
-            maxWidth = 1200.dp,
-            maxHeight = 800.dp
-        ) {
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = {
-                            Text("Olá, ${uiState.user?.displayName?.split(" ")?.first() ?: "Usuário"}!")
-                        },
-                        actions = {
-                            IconButton(
-                                onClick = {
-                                    viewModel.logout()
-                                    navigator.replaceAll(AuthScreen)
-                                }
-                            ) {
-                                Icon(
-                                    Icons.AutoMirrored.Rounded.Logout,
-                                    contentDescription = "Logout"
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                            actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "Olá, ${
+                                authUiState.user?.displayName?.split(" ")?.first() ?: "Usuário"
+                            }!"
                         )
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = {
+                                authViewModel.logout()
+                                navigator.replaceAll(AuthScreen)
+                            }
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.Logout,
+                                contentDescription = "Logout"
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                     )
-                },
-                content = { paddingValues ->
+                )
+            },
+            content = { paddingValues ->
+                if (homeUiState.isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else {
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
@@ -114,7 +130,12 @@ object HomeScreen : Screen {
                     ) {
                         // Card do Saldo
                         item {
-                            BalanceCard(currentBalance)
+                            BalanceCard(
+                                balance = homeUiState.balance,
+                                onBalanceClick = {
+                                    navigator.push(EditBalanceScreen)
+                                }
+                            )
                         }
 
                         // Menu de Ações
@@ -127,38 +148,60 @@ object HomeScreen : Screen {
                         }
 
                         item {
-                            MenuGrid()
+                            MenuGrid(navigator)
                         }
 
                         // Gráfico de Gastos
+                        if (homeUiState.expensesByCategory.isNotEmpty()) {
+                            item {
+                                Text(
+                                    text = "Gastos por categoria",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                            }
+
+                            item {
+                                ExpenseChartCard(homeUiState.expensesByCategory)
+                            }
+                        }
+
                         item {
-                            Text(
-                                text = "Gastos por categoria",
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.padding(vertical = 8.dp)
+                            FinancialSummary(
+                                totalIncome = homeUiState.monthlyIncome,
+                                totalExpenses = homeUiState.monthlyExpenses
                             )
-                        }
-
-                        item {
-                            ExpenseChartCard(expensesByCategory)
-                        }
-
-                        item {
-                            FinancialSummary()
                         }
                     }
                 }
-            )
+
+                // Mostrar erro se houver
+                homeUiState.error?.let { error ->
+                    LaunchedEffect(error) {
+                        // Aqui você pode mostrar um SnackBar
+                        kotlinx.coroutines.delay(3000)
+                        homeViewModel.clearError()
+                    }
+                }
+            }
+        )
+
+        LaunchedEffect(Unit) {
+            homeViewModel.refresh()
         }
     }
 }
 
 @Composable
-private fun BalanceCard(balance: Double) {
+private fun BalanceCard(
+    balance: Double,
+    onBalanceClick: () -> Unit = {}
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(120.dp),
+            .height(120.dp)
+            .clickable { onBalanceClick() },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         ),
@@ -180,11 +223,21 @@ private fun BalanceCard(balance: Double) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-                Icon(
-                    Icons.Rounded.AccountBalanceWallet,
-                    contentDescription = "Saldo",
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Rounded.AccountBalanceWallet,
+                        contentDescription = "Saldo",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Toque para editar",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    )
+                }
             }
 
             Text(
@@ -198,14 +251,26 @@ private fun BalanceCard(balance: Double) {
 }
 
 @Composable
-private fun MenuGrid() {
+private fun MenuGrid(navigator: Navigator) {
     val menuItems = listOf(
-        MenuItem("Adicionar Gasto", Icons.Rounded.Remove),
-        MenuItem("Adicionar Receita", Icons.Rounded.Add),
-        MenuItem("Ver Gastos", Icons.AutoMirrored.Rounded.List),
-        MenuItem("Ver Receitas", Icons.Rounded.Receipt),
-        MenuItem("Relatórios", Icons.Rounded.BarChart),
-        MenuItem("Categorias", Icons.Rounded.Category)
+        MenuItem("Adicionar Gasto", Icons.Rounded.Remove) {
+            navigator.push(AddExpenseScreen)
+        },
+        MenuItem("Adicionar Receita", Icons.Rounded.Add) {
+            navigator.push(AddIncomeScreen)
+        },
+        MenuItem("Ver Gastos", Icons.AutoMirrored.Rounded.List) {
+            // TODO: Implementar tela de gastos
+        },
+        MenuItem("Ver Receitas", Icons.Rounded.Receipt) {
+            // TODO: Implementar tela de receitas
+        },
+        MenuItem("Relatórios", Icons.Rounded.BarChart) {
+            // TODO: Implementar tela de relatórios
+        },
+        MenuItem("Categorias", Icons.Rounded.Category) {
+            // TODO: Implementar tela de categorias
+        }
     )
 
     val rows = menuItems.chunked(2)
@@ -237,9 +302,7 @@ private fun MenuItemCard(item: MenuItem) {
         modifier = Modifier
             .fillMaxWidth()
             .height(90.dp)
-            .clickable {
-                // TODO: Implementar navegação quando as telas existirem
-            },
+            .clickable { item.onClick() },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -284,7 +347,6 @@ private fun ExpenseChartCard(expensesByCategory: Map<String, Double>) {
                 .padding(16.dp)
         ) {
             if (expensesByCategory.isNotEmpty()) {
-                // Gráfico simples usando Canvas (sem dependências externas)
                 SimpleBarChart(expensesByCategory)
             } else {
                 Box(
@@ -303,30 +365,38 @@ private fun ExpenseChartCard(expensesByCategory: Map<String, Double>) {
 }
 
 @Composable
-private fun SimpleBarChart(data: Map<String, Double>) {
+private fun SimpleBarChart(
+    data: Map<String, Double>,
+    categories: List<Category> = emptyList()
+) {
     val maxValue = data.values.maxOrNull() ?: 1.0
-    val colors = listOf(
-        Color(0xFF6200EE),
-        Color(0xFF03DAC6),
-        Color(0xFFFF6200),
-        Color(0xFF4CAF50),
-        Color(0xFFFF5722)
+
+    val categoryColorMap = categories.associate { category ->
+        category.name to ColorParser.parseHexColor(category.color)
+    }
+
+    val fallbackColors = listOf(
+        Color(0xFF6200EE), Color(0xFF03DAC6), Color(0xFFFF6200),
+        Color(0xFF4CAF50), Color(0xFFFF5722), Color(0xFF9C27B0),
+        Color(0xFF2196F3), Color(0xFFFF9800), Color(0xFF607D8B),
+        Color(0xFFE91E63)
     )
 
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        data.entries.forEachIndexed { index, (category, value) ->
+        data.entries.forEachIndexed { index, (categoryName, value) ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = category,
+                    text = categoryName,
                     modifier = Modifier.width(80.dp),
                     style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
 
                 Box(
@@ -343,7 +413,8 @@ private fun SimpleBarChart(data: Map<String, Double>) {
                             .fillMaxHeight()
                             .fillMaxWidth((value / maxValue).toFloat())
                             .background(
-                                colors[index % colors.size],
+                                categoryColorMap[categoryName]
+                                    ?: fallbackColors[index % fallbackColors.size],
                                 RoundedCornerShape(10.dp)
                             )
                     )
@@ -361,10 +432,10 @@ private fun SimpleBarChart(data: Map<String, Double>) {
 }
 
 @Composable
-private fun FinancialSummary() {
-    val totalExpenses = 1720.0
-    val totalRevenue = 4567.50
-
+private fun FinancialSummary(
+    totalIncome: Double,
+    totalExpenses: Double
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -389,7 +460,7 @@ private fun FinancialSummary() {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "R$ ${formatDouble(totalRevenue)}",
+                        text = "R$ ${formatDouble(totalIncome)}",
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF4CAF50)
@@ -423,33 +494,13 @@ private fun FinancialSummary() {
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "R$ ${formatDouble(totalRevenue - totalExpenses)}",
+                    text = "R$ ${formatDouble(totalIncome - totalExpenses)}",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
-                    color = if (totalRevenue - totalExpenses >= 0)
+                    color = if (totalIncome - totalExpenses >= 0)
                         Color(0xFF4CAF50) else Color(0xFFFF5722)
                 )
             }
         }
     }
 }
-
-fun formatDouble(value: Double, decimals: Int = 2): String {
-    val factor = 10.0.pow(decimals)
-    val rounded = round(value * factor) / factor
-    return buildString {
-        append(rounded.toString())
-        val parts = rounded.toString().split(".")
-        if (parts.size == 1) {
-            append(".")
-            repeat(decimals) { append("0") }
-        } else if (parts[1].length < decimals) {
-            repeat(decimals - parts[1].length) { append("0") }
-        }
-    }
-}
-
-data class MenuItem(
-    val title: String,
-    val icon: ImageVector
-)

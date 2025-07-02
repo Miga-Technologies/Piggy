@@ -24,7 +24,6 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.miga.piggy.auth.presentation.viewmodel.AuthViewModel
-import com.miga.piggy.utils.composables.FixedSizeWrapper
 import org.koin.compose.koinInject
 
 object EmailVerificationScreen : Screen {
@@ -35,62 +34,57 @@ object EmailVerificationScreen : Screen {
         val viewModel: AuthViewModel = koinInject()
         val uiState by viewModel.uiState.collectAsState()
 
-        FixedSizeWrapper(
-            maxWidth = 800.dp,
-            maxHeight = 600.dp
-        ) {
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = { Text("Verificação de E-mail") }
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Verificação de E-mail") }
+                )
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Por favor, verifique sua caixa de entrada (e spam!) e clique no link para ativar sua conta.",
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(16.dp)
+                )
+
+                if (uiState.verificationEmailSent) {
+                    Text(
+                        text = "Um novo e-mail de verificação foi enviado.",
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.padding(8.dp)
                     )
                 }
-            ) { padding ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = {
+                        viewModel.resendVerificationEmail()
+                    }
                 ) {
-                    Text(
-                        text = "Por favor, verifique sua caixa de entrada (e spam!) e clique no link para ativar sua conta.",
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(16.dp)
-                    )
+                    Text("Reenviar E-mail")
+                }
 
-                    if (uiState.verificationEmailSent) {
-                        Text(
-                            text = "Um novo e-mail de verificação foi enviado.",
-                            color = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.padding(8.dp)
-                        )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = {
+                        viewModel.checkEmailVerificationStatus()
                     }
+                ) {
+                    Text("Já verifiquei meu e-mail")
+                }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Button(
-                        onClick = {
-                            viewModel.resendVerificationEmail()
-                        }
-                    ) {
-                        Text("Reenviar E-mail")
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = {
-                            viewModel.checkEmailVerificationStatus()
-                        }
-                    ) {
-                        Text("Já verifiquei meu e-mail")
-                    }
-
-                    LaunchedEffect(uiState.isEmailVerified) {
-                        if (uiState.isEmailVerified == true) {
-                            navigator.replaceAll(AuthScreen)
-                        }
+                LaunchedEffect(uiState.isEmailVerified) {
+                    if (uiState.isEmailVerified == true) {
+                        navigator.replaceAll(AuthScreen)
                     }
                 }
             }

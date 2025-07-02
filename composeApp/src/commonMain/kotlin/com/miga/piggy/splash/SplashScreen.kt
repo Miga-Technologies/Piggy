@@ -9,7 +9,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.miga.piggy.auth.presentation.ui.AuthScreen
 import com.miga.piggy.auth.presentation.viewmodel.AuthViewModel
-import com.miga.piggy.home.presentation.HomeScreen
+import com.miga.piggy.home.presentation.ui.HomeScreen
 import org.koin.compose.koinInject
 
 object SplashScreen : Screen {

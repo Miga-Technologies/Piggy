@@ -15,6 +15,27 @@ import com.miga.piggy.auth.domain.usecase.LogoutUseCaseImpl
 import com.miga.piggy.auth.domain.usecase.RegisterUseCase
 import com.miga.piggy.auth.domain.usecase.RegisterUseCaseImpl
 import com.miga.piggy.auth.presentation.viewmodel.AuthViewModel
+import com.miga.piggy.home.presentation.viewmodel.HomeViewModel
+import com.miga.piggy.balance.presentation.viewmodel.EditBalanceViewModel
+import com.miga.piggy.home.data.datasource.FinancialRemoteDataSource
+import com.miga.piggy.home.data.datasource.FinancialRemoteDataSourceImpl
+import com.miga.piggy.home.data.repository.FinancialRepositoryImpl
+import com.miga.piggy.home.domain.repository.FinancialRepository
+import com.miga.piggy.balance.domain.usecases.GetBalanceUseCase
+import com.miga.piggy.balance.domain.usecases.UpdateBalanceUseCase
+import com.miga.piggy.home.domain.usecases.category.AddCategoryUseCase
+import com.miga.piggy.home.domain.usecases.category.GetCategoriesByTypeUseCase
+import com.miga.piggy.home.domain.usecases.category.GetCategoriesUseCase
+import com.miga.piggy.home.domain.usecases.financial.GetFinancialSummaryUseCase
+import com.miga.piggy.transaction.domain.usecases.AddTransactionUseCase
+import com.miga.piggy.transaction.domain.usecases.DeleteTransactionUseCase
+import com.miga.piggy.transaction.domain.usecases.GetTransactionsByTypeUseCase
+import com.miga.piggy.transaction.domain.usecases.GetTransactionsUseCase
+import com.miga.piggy.transaction.domain.usecases.UpdateTransactionUseCase
+import com.miga.piggy.transaction.presentation.viewmodel.AddTransactionViewModel
+import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.firestore.FirebaseFirestore
+import dev.gitlive.firebase.firestore.firestore
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
@@ -22,6 +43,8 @@ import org.koin.dsl.module
 expect val platformModule: Module
 
 val appModule = module {
+    single<FirebaseFirestore> { Firebase.firestore }
+
     single<AuthDataSource> { FirebaseAuthDataSource() }
 
     single<AuthRepository> { AuthRepositoryImpl(get()) }
@@ -32,5 +55,27 @@ val appModule = module {
     single<LogoutUseCase> { LogoutUseCaseImpl(get()) }
     single<EmailVerificationUseCase> { EmailVerificationUseCaseImpl(get()) }
 
+    single<FinancialRemoteDataSource> { FinancialRemoteDataSourceImpl(get()) }
+
+    single<FinancialRepository> { FinancialRepositoryImpl(get()) }
+
+    single { GetBalanceUseCase(get()) }
+    single { UpdateBalanceUseCase(get()) }
+
+    single { GetTransactionsUseCase(get()) }
+    single { GetTransactionsByTypeUseCase(get()) }
+    single { AddTransactionUseCase(get()) }
+    single { UpdateTransactionUseCase(get()) }
+    single { DeleteTransactionUseCase(get()) }
+
+    single { GetCategoriesUseCase(get()) }
+    single { GetCategoriesByTypeUseCase(get()) }
+    single { AddCategoryUseCase(get()) }
+
+    single { GetFinancialSummaryUseCase(get(), get()) }
+
     viewModelOf(::AuthViewModel)
+    viewModelOf(::HomeViewModel)
+    viewModelOf(::EditBalanceViewModel)
+    viewModelOf(::AddTransactionViewModel)
 }
