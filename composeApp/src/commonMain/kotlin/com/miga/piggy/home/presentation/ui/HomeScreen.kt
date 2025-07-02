@@ -38,10 +38,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -63,6 +67,10 @@ import com.miga.piggy.transaction.presentation.ui.AddExpenseScreen
 import com.miga.piggy.transaction.presentation.ui.AddIncomeScreen
 import com.miga.piggy.utils.formatters.formatDouble
 import com.miga.piggy.utils.parsers.ColorParser
+import dev.materii.pullrefresh.PullRefreshIndicator
+import dev.materii.pullrefresh.PullRefreshLayout
+import dev.materii.pullrefresh.PullRefreshState
+import dev.materii.pullrefresh.rememberPullRefreshState
 import org.koin.compose.koinInject
 
 object HomeScreen : Screen {
@@ -75,6 +83,8 @@ object HomeScreen : Screen {
         val authUiState by authViewModel.uiState.collectAsState()
         val homeUiState by homeViewModel.uiState.collectAsState()
 
+        var isRefreshing by remember { mutableStateOf(false) }
+
         // Verificar se usuário está logado
         LaunchedEffect(authUiState.user) {
             if (authUiState.user == null) {
@@ -82,109 +92,125 @@ object HomeScreen : Screen {
             }
         }
 
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            "Olá, ${
-                                authUiState.user?.displayName?.split(" ")?.first() ?: "Usuário"
-                            }!"
-                        )
-                    },
-                    actions = {
-                        IconButton(
-                            onClick = {
-                                authViewModel.logout()
-                                navigator.replaceAll(AuthScreen)
-                            }
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.Logout,
-                                contentDescription = "Logout"
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-                    )
+        val pullRefreshState = rememberPullRefreshState(
+            refreshing = isRefreshing,
+            onRefresh = { homeViewModel.refresh() }
+        )
+
+        PullRefreshLayout(
+            state = pullRefreshState,
+            indicator = {
+                PullRefreshIndicator(
+                    state = pullRefreshState,
+                    backgroundColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                    contentColor = MaterialTheme.colorScheme.primary
                 )
-            },
-            content = { paddingValues ->
-                if (homeUiState.isLoading) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(paddingValues),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        // Card do Saldo
-                        item {
-                            BalanceCard(
-                                balance = homeUiState.balance,
-                                onBalanceClick = {
-                                    navigator.push(EditBalanceScreen)
-                                }
-                            )
-                        }
-
-                        // Menu de Ações
-                        item {
+            }
+        ) {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = {
                             Text(
-                                text = "O que você quer fazer?",
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.padding(vertical = 8.dp)
+                                "Olá, ${
+                                    authUiState.user?.displayName?.split(" ")?.first() ?: "Usuário"
+                                }!"
                             )
+                        },
+                        actions = {
+                            IconButton(
+                                onClick = {
+                                    authViewModel.logout()
+                                    navigator.replaceAll(AuthScreen)
+                                }
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Rounded.Logout,
+                                    contentDescription = "Logout"
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                            actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+                },
+                content = { paddingValues ->
+                    if (homeUiState.isLoading) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
                         }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(paddingValues),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            // Card do Saldo
+                            item {
+                                BalanceCard(
+                                    balance = homeUiState.balance,
+                                    onBalanceClick = {
+                                        navigator.push(EditBalanceScreen)
+                                    }
+                                )
+                            }
 
-                        item {
-                            MenuGrid(navigator)
-                        }
-
-                        // Gráfico de Gastos
-                        if (homeUiState.expensesByCategory.isNotEmpty()) {
+                            // Menu de Ações
                             item {
                                 Text(
-                                    text = "Gastos por categoria",
+                                    text = "O que você quer fazer?",
                                     style = MaterialTheme.typography.titleMedium,
                                     modifier = Modifier.padding(vertical = 8.dp)
                                 )
                             }
 
                             item {
-                                ExpenseChartCard(homeUiState.expensesByCategory)
+                                MenuGrid(navigator)
+                            }
+
+                            // Gráfico de Gastos
+                            if (homeUiState.expensesByCategory.isNotEmpty()) {
+                                item {
+                                    Text(
+                                        text = "Gastos por categoria",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        modifier = Modifier.padding(vertical = 8.dp)
+                                    )
+                                }
+
+                                item {
+                                    ExpenseChartCard(homeUiState.expensesByCategory)
+                                }
+                            }
+
+                            item {
+                                FinancialSummary(
+                                    totalIncome = homeUiState.monthlyIncome,
+                                    totalExpenses = homeUiState.monthlyExpenses
+                                )
                             }
                         }
+                    }
 
-                        item {
-                            FinancialSummary(
-                                totalIncome = homeUiState.monthlyIncome,
-                                totalExpenses = homeUiState.monthlyExpenses
-                            )
+                    // Mostrar erro se houver
+                    homeUiState.error?.let { error ->
+                        LaunchedEffect(error) {
+                            // Aqui você pode mostrar um SnackBar
+                            kotlinx.coroutines.delay(3000)
+                            homeViewModel.clearError()
                         }
                     }
                 }
-
-                // Mostrar erro se houver
-                homeUiState.error?.let { error ->
-                    LaunchedEffect(error) {
-                        // Aqui você pode mostrar um SnackBar
-                        kotlinx.coroutines.delay(3000)
-                        homeViewModel.clearError()
-                    }
-                }
-            }
-        )
+            )
+        }
 
         LaunchedEffect(Unit) {
             homeViewModel.refresh()

@@ -75,6 +75,8 @@ kotlin {
             implementation(libs.ktor.client.contentNegotiation)
             implementation(libs.ktor.client.logging)
             implementation(libs.ktor.client.json)
+
+            implementation(libs.materii.pullrefresh)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
