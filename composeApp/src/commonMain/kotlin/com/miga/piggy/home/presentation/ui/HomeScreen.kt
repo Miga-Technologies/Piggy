@@ -59,10 +59,11 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.miga.piggy.auth.presentation.ui.AuthScreen
 import com.miga.piggy.auth.presentation.viewmodel.AuthViewModel
-import com.miga.piggy.home.presentation.viewmodel.HomeViewModel
 import com.miga.piggy.balance.presentation.ui.EditBalanceScreen
+import com.miga.piggy.category.presentation.ui.CategoryScreen
 import com.miga.piggy.home.domain.entity.Category
 import com.miga.piggy.home.presentation.ui.helper.MenuItem
+import com.miga.piggy.home.presentation.viewmodel.HomeViewModel
 import com.miga.piggy.transaction.presentation.ui.AddExpenseScreen
 import com.miga.piggy.transaction.presentation.ui.AddIncomeScreen
 import com.miga.piggy.utils.formatters.formatDouble
@@ -85,7 +86,6 @@ object HomeScreen : Screen {
 
         var isRefreshing by remember { mutableStateOf(false) }
 
-        // Verificar se usuário está logado
         LaunchedEffect(authUiState.user) {
             if (authUiState.user == null) {
                 navigator.replaceAll(AuthScreen)
@@ -295,7 +295,7 @@ private fun MenuGrid(navigator: Navigator) {
             // TODO: Implementar tela de relatórios
         },
         MenuItem("Categorias", Icons.Rounded.Category) {
-            // TODO: Implementar tela de categorias
+            navigator.push(CategoryScreen)
         }
     )
 

@@ -4,9 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.miga.piggy.auth.presentation.viewmodel.AuthViewModel
 import com.miga.piggy.home.domain.entity.Category
+import com.miga.piggy.home.domain.usecase.GetCategoriesUseCase
 import com.miga.piggy.transaction.domain.entity.Transaction
 import com.miga.piggy.transaction.domain.entity.TransactionType
-import com.miga.piggy.home.domain.usecases.category.GetCategoriesByTypeUseCase
 import com.miga.piggy.transaction.domain.usecases.AddTransactionUseCase
 import com.miga.piggy.transaction.presentation.state.AddTransactionUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 
 class AddTransactionViewModel(
     private val addTransactionUseCase: AddTransactionUseCase,
-    private val getCategoriesByTypeUseCase: GetCategoriesByTypeUseCase,
+    private val getCategoriesUseCase: GetCategoriesUseCase,
     private val authViewModel: AuthViewModel
 ) : ViewModel() {
 
@@ -30,7 +30,7 @@ class AddTransactionViewModel(
     private fun loadCategories() {
         viewModelScope.launch {
             try {
-                val categories = getCategoriesByTypeUseCase(_uiState.value.transactionType)
+                val categories = getCategoriesUseCase()
                 _uiState.value = _uiState.value.copy(
                     categories = categories,
                     selectedCategory = categories.firstOrNull()
@@ -45,7 +45,7 @@ class AddTransactionViewModel(
 
     fun setTransactionType(type: TransactionType) {
         _uiState.value = _uiState.value.copy(transactionType = type)
-        loadCategories()
+        // Removed the loadCategories() call here
     }
 
     fun updateAmount(amount: String) {

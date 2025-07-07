@@ -17,4 +17,6 @@ interface FinancialRepository {
 
     suspend fun getCategories(): List<Category>
     suspend fun addCategory(category: Category): Result<String>
+    suspend fun updateCategory(category: Category): Result<Unit>
+    suspend fun deleteCategory(categoryId: String): Result<Unit>
 }

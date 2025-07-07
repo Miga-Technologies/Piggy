@@ -43,29 +43,52 @@ class AuthViewModel(
 
             when (val result = loginUseCase(currentForm.email, currentForm.password)) {
                 is AuthResult.Success -> {
-                    val isVerified = emailVerificationUseCase.isEmailVerified()
-                    if (isVerified) {
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            user = result.data,
-                            isEmailVerified = true,
-                            error = null
-                        )
-                    } else {
-                        logout()
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            user = null,
-                            isEmailVerified = false,
-                            error = "Por favor, verifique seu e-mail antes de acessar."
-                        )
+                    try {
+                        val isVerified = emailVerificationUseCase.isEmailVerified()
+                        if (isVerified) {
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                user = result.data,
+                                isEmailVerified = true,
+                                error = null
+                            )
+                        } else {
+                            logout()
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                user = null,
+                                isEmailVerified = false,
+                                error = "Por favor, verifique seu e-mail antes de acessar."
+                            )
+                        }
+                    } catch (e: Exception) {
+                        if (isUserDeletedError(e)) {
+                            logout()
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                user = null,
+                                isEmailVerified = false,
+                                error = "Conta não encontrada. Faça login novamente."
+                            )
+                        } else {
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                error = e.message
+                            )
+                        }
                     }
                 }
 
                 is AuthResult.Error -> {
+                    val errorMessage = if (isUserDeletedError(result.exception)) {
+                        "Conta não encontrada. Faça login novamente."
+                    } else {
+                        result.exception.message
+                    }
+
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = result.exception.message
+                        error = errorMessage
                     )
                 }
 
@@ -136,9 +159,29 @@ class AuthViewModel(
         viewModelScope.launch {
             when (val result = getCurrentUserUseCase()) {
                 is AuthResult.Success -> {
-                    _uiState.value = _uiState.value.copy(user = result.data)
+                    if (result.data != null) {
+                        try {
+                            _uiState.value = _uiState.value.copy(user = result.data)
+                        } catch (e: Exception) {
+                            if (isUserDeletedError(e)) {
+                                logout()
+                                _uiState.value = _uiState.value.copy(
+                                    user = null,
+                                    error = "Conta não encontrada. Faça login novamente."
+                                )
+                            }
+                        }
+                    }
                 }
-
+                is AuthResult.Error -> {
+                    if (isUserDeletedError(result.exception)) {
+                        logout()
+                        _uiState.value = _uiState.value.copy(
+                            user = null,
+                            error = "Conta não encontrada. Faça login novamente."
+                        )
+                    }
+                }
                 else -> {}
             }
         }
@@ -179,24 +222,65 @@ class AuthViewModel(
             when (val result = getCurrentUserUseCase()) {
                 is AuthResult.Success -> {
                     val user = result.data
-                    val isVerified = if (user != null) emailVerificationUseCase.isEmailVerified() else false
-                    _uiState.value = _uiState.value.copy(
-                        user = user,
-                        isEmailVerified = isVerified
-                    )
+                    if (user != null) {
+                        try {
+                            val isVerified = emailVerificationUseCase.isEmailVerified()
+                            _uiState.value = _uiState.value.copy(
+                                user = user,
+                                isEmailVerified = isVerified
+                            )
+                        } catch (e: Exception) {
+                            if (isUserDeletedError(e)) {
+                                logout()
+                                _uiState.value = _uiState.value.copy(
+                                    user = null,
+                                    isEmailVerified = false,
+                                    error = "Conta não encontrada. Faça login novamente."
+                                )
+                            } else {
+                                _uiState.value = _uiState.value.copy(
+                                    user = null,
+                                    isEmailVerified = false,
+                                    error = e.message
+                                )
+                            }
+                        }
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            user = null,
+                            isEmailVerified = false
+                        )
+                    }
                 }
                 is AuthResult.Error -> {
-                    _uiState.value = _uiState.value.copy(
-                        user = null,
-                        isEmailVerified = false,
-                        error = result.exception.message
-                    )
+                    if (isUserDeletedError(result.exception)) {
+                        logout()
+                        _uiState.value = _uiState.value.copy(
+                            user = null,
+                            isEmailVerified = false,
+                            error = "Conta não encontrada. Faça login novamente."
+                        )
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            user = null,
+                            isEmailVerified = false,
+                            error = result.exception.message
+                        )
+                    }
                 }
                 is AuthResult.Loading -> {
                     _uiState.value = _uiState.value.copy(isLoading = true)
                 }
             }
         }
+    }
+
+    private fun isUserDeletedError(exception: Throwable): Boolean {
+        val message = exception.message?.lowercase() ?: ""
+        return message.contains("no user record") ||
+                message.contains("user may have been deleted") ||
+                message.contains("user not found") ||
+                message.contains("invalid user")
     }
 
     private fun validateForm(form: LoginFormState, isLogin: Boolean): Boolean {

@@ -15,6 +15,8 @@ interface FinancialRemoteDataSource {
     suspend fun deleteTransaction(transactionId: String): Result<Unit>
     suspend fun getCategories(): List<CategoryDto>
     suspend fun addCategory(category: CategoryDto): Result<String>
+    suspend fun updateCategory(category: CategoryDto): Result<Unit>
+    suspend fun deleteCategory(categoryId: String): Result<Unit>
 }
 
 class FinancialRemoteDataSourceImpl(
@@ -135,6 +137,28 @@ class FinancialRemoteDataSourceImpl(
             val newCategory = category.copy(id = docRef.id)
             docRef.set(newCategory)
             Result.success(docRef.id)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateCategory(category: CategoryDto): Result<Unit> {
+        return try {
+            firestore.collection(CATEGORIES_COLLECTION)
+                .document(category.id)
+                .set(category)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteCategory(categoryId: String): Result<Unit> {
+        return try {
+            firestore.collection(CATEGORIES_COLLECTION)
+                .document(categoryId)
+                .delete()
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

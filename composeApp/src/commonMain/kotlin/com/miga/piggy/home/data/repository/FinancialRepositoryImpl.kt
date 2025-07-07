@@ -49,4 +49,12 @@ class FinancialRepositoryImpl(
     override suspend fun addCategory(category: Category): Result<String> {
         return remoteDataSource.addCategory(category.toDto())
     }
+
+    override suspend fun updateCategory(category: Category): Result<Unit> {
+        return remoteDataSource.updateCategory(category.toDto())
+    }
+
+    override suspend fun deleteCategory(categoryId: String): Result<Unit> {
+        return remoteDataSource.deleteCategory(categoryId)
+    }
 }

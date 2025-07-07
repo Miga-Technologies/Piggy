@@ -23,9 +23,12 @@ import com.miga.piggy.home.data.repository.FinancialRepositoryImpl
 import com.miga.piggy.home.domain.repository.FinancialRepository
 import com.miga.piggy.balance.domain.usecases.GetBalanceUseCase
 import com.miga.piggy.balance.domain.usecases.UpdateBalanceUseCase
-import com.miga.piggy.home.domain.usecases.category.AddCategoryUseCase
+import com.miga.piggy.category.presentation.viewmodel.CategoryViewModel
+import com.miga.piggy.home.domain.usecase.AddCategoryUseCase
+import com.miga.piggy.home.domain.usecase.DeleteCategoryUseCase
+import com.miga.piggy.home.domain.usecase.GetCategoriesUseCase
+import com.miga.piggy.home.domain.usecase.UpdateCategoryUseCase
 import com.miga.piggy.home.domain.usecases.category.GetCategoriesByTypeUseCase
-import com.miga.piggy.home.domain.usecases.category.GetCategoriesUseCase
 import com.miga.piggy.home.domain.usecases.financial.GetFinancialSummaryUseCase
 import com.miga.piggy.transaction.domain.usecases.AddTransactionUseCase
 import com.miga.piggy.transaction.domain.usecases.DeleteTransactionUseCase
@@ -59,23 +62,25 @@ val appModule = module {
 
     single<FinancialRepository> { FinancialRepositoryImpl(get()) }
 
-    single { GetBalanceUseCase(get()) }
-    single { UpdateBalanceUseCase(get()) }
-
-    single { GetTransactionsUseCase(get()) }
-    single { GetTransactionsByTypeUseCase(get()) }
-    single { AddTransactionUseCase(get()) }
-    single { UpdateTransactionUseCase(get()) }
-    single { DeleteTransactionUseCase(get()) }
-
-    single { GetCategoriesUseCase(get()) }
-    single { GetCategoriesByTypeUseCase(get()) }
-    single { AddCategoryUseCase(get()) }
-
-    single { GetFinancialSummaryUseCase(get(), get()) }
+    factory { GetBalanceUseCase(get()) }
+    factory { UpdateBalanceUseCase(get()) }
+    factory { GetBalanceUseCase(get()) }
+    factory { UpdateBalanceUseCase(get()) }
+    factory { GetCategoriesUseCase(get()) }
+    factory { AddCategoryUseCase(get()) }
+    factory { DeleteCategoryUseCase(get()) }
+    factory { UpdateCategoryUseCase(get()) }
+    factory { GetCategoriesByTypeUseCase(get()) }
+    factory { GetTransactionsUseCase(get()) }
+    factory { AddTransactionUseCase(get()) }
+    factory { DeleteTransactionUseCase(get()) }
+    factory { UpdateTransactionUseCase(get()) }
+    factory { GetTransactionsByTypeUseCase(get()) }
+    factory { GetFinancialSummaryUseCase(get(), get()) }
 
     viewModelOf(::AuthViewModel)
     viewModelOf(::HomeViewModel)
     viewModelOf(::EditBalanceViewModel)
     viewModelOf(::AddTransactionViewModel)
+    viewModelOf(::CategoryViewModel)
 }
