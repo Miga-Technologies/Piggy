@@ -86,11 +86,11 @@ class ReportsViewModel(
         }
     }
 
-    fun exportToPdf(userId: String) {
+    fun exportToPdf() {
         viewModelScope.launch {
             try {
                 val state = _uiState.value
-                val success = pdfExporter.exportReportToPdf(
+                val result = pdfExporter.exportReportToPdf(
                     monthlyIncome = state.monthlyIncome,
                     monthlyExpenses = state.monthlyExpenses,
                     expensesByCategory = state.expensesByCategory,
@@ -98,10 +98,15 @@ class ReportsViewModel(
                     recentTransactions = state.recentTransactions
                 )
 
-                if (success) {
-                    _uiState.value = _uiState.value.copy(pdfExported = true)
+                if (result.success) {
+                    _uiState.value = _uiState.value.copy(
+                        pdfExported = true,
+                        pdfPath = result.filePath
+                    )
                 } else {
-                    _uiState.value = _uiState.value.copy(error = "Erro ao exportar PDF")
+                    _uiState.value = _uiState.value.copy(
+                        error = result.error ?: "Erro desconhecido ao exportar PDF"
+                    )
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(

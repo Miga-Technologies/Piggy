@@ -3,10 +3,8 @@ package com.miga.piggy.reports.presentation.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,7 +20,11 @@ import com.miga.piggy.auth.presentation.viewmodel.AuthViewModel
 import com.miga.piggy.reports.presentation.viewmodel.ReportsViewModel
 import com.miga.piggy.transaction.domain.entity.TransactionType
 import com.miga.piggy.utils.formatters.formatDouble
-import kotlinx.datetime.*
+import com.miga.piggy.utils.permission.checkPermission
+import dev.icerock.moko.permissions.Permission
+import dev.icerock.moko.permissions.compose.BindEffect
+import dev.icerock.moko.permissions.compose.rememberPermissionsControllerFactory
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 object ReportsScreen : Screen {
@@ -35,6 +37,15 @@ object ReportsScreen : Screen {
         val authState by authViewModel.uiState.collectAsState()
         val reportsState by reportsViewModel.uiState.collectAsState()
 
+        val snackBarHostState = remember { SnackbarHostState() }
+        val scope = rememberCoroutineScope()
+        val factory = rememberPermissionsControllerFactory()
+        val controller = remember(factory) {
+            factory.createPermissionsController()
+        }
+
+        BindEffect(controller)
+
         LaunchedEffect(authState.user?.id) {
             authState.user?.id?.let { userId ->
                 reportsViewModel.loadReports(userId)
@@ -42,6 +53,7 @@ object ReportsScreen : Screen {
         }
 
         Scaffold(
+            snackbarHost = { SnackbarHost(snackBarHostState) },
             topBar = {
                 TopAppBar(
                     title = { Text("Relatórios") },
@@ -53,8 +65,18 @@ object ReportsScreen : Screen {
                     actions = {
                         IconButton(
                             onClick = {
-                                authState.user?.id?.let { userId ->
-                                    reportsViewModel.exportToPdf(userId)
+                                scope.launch {
+                                    val hasPermission = checkPermission(
+                                        permission = Permission.WRITE_STORAGE,
+                                        controller = controller,
+                                        snackBarHostState = snackBarHostState
+                                    )
+
+                                    if (hasPermission) {
+                                        authState.user?.id?.let {
+                                            reportsViewModel.exportToPdf()
+                                        }
+                                    }
                                 }
                             }
                         ) {

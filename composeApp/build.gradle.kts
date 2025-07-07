@@ -47,6 +47,8 @@ kotlin {
             implementation(libs.koin.androidx.compose)
 
             implementation(project.dependencies.platform(libs.firebase.bom))
+
+            implementation(libs.itext.pdf)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -75,8 +77,7 @@ kotlin {
 
             implementation(libs.compose.multiplatform.datetime.picker)
 
-            // PDF export
-            implementation("com.itextpdf:itext7-core:7.2.5")
+            implementation(libs.moko.permissions.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -91,6 +92,8 @@ kotlin {
             implementation(libs.ktor.client.contentNegotiation)
             implementation(libs.ktor.client.logging)
             implementation(libs.ktor.client.json)
+
+            implementation(libs.itext.pdf)
         }
     }
 }

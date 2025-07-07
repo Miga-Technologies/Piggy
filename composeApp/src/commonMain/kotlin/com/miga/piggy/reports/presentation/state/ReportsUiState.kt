@@ -11,5 +11,6 @@ data class ReportsUiState(
     val incomeByCategory: Map<String, Double> = emptyMap(),
     val recentTransactions: List<Transaction> = emptyList(),
     val pdfExported: Boolean = false,
+    val pdfPath: String? = null,
     val error: String? = null
 )
