@@ -72,6 +72,8 @@ kotlin {
             implementation(libs.firebase.firestore)
             
             implementation(libs.materii.pullrefresh)
+
+            implementation(libs.compose.multiplatform.datetime.picker)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -79,8 +81,8 @@ kotlin {
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.kotlinx.datetime)
 
-            // Ktor for Firebase REST API authentication
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.cio)
             implementation(libs.ktor.client.contentNegotiation)

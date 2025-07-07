@@ -34,6 +34,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -45,14 +48,15 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.miga.piggy.transaction.domain.entity.TransactionType
 import com.miga.piggy.transaction.presentation.viewmodel.AddTransactionViewModel
+import com.miga.piggy.utils.datepicker.PlatformDatePicker
 import com.miga.piggy.utils.formatters.formatDate
 import org.koin.compose.koinInject
 
 class AddTransactionScreen(
     private val initialType: TransactionType = TransactionType.EXPENSE
 ) : Screen {
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val viewModel: AddTransactionViewModel = koinInject()
@@ -217,16 +221,15 @@ class AddTransactionScreen(
                 }
 
                 item {
+                    var showDatePicker by remember { mutableStateOf(false) }
+
                     OutlinedTextField(
                         value = formatDate(uiState.selectedDate),
                         onValueChange = { },
                         label = { Text("Data") },
                         trailingIcon = {
                             IconButton(
-                                onClick = {
-                                    // TODO: Implementar date picker
-                                    // Por enquanto usa data atual
-                                }
+                                onClick = { showDatePicker = true }
                             ) {
                                 Icon(Icons.Rounded.DateRange, contentDescription = "Selecionar data")
                             }
@@ -235,6 +238,17 @@ class AddTransactionScreen(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !uiState.isLoading
                     )
+
+                    if (showDatePicker) {
+                        PlatformDatePicker(
+                            selectedDate = uiState.selectedDate,
+                            onDateSelected = { selectedDate ->
+                                viewModel.updateDate(selectedDate)
+                                showDatePicker = false
+                            },
+                            onDismiss = { showDatePicker = false }
+                        )
+                    }
                 }
 
                 item {
