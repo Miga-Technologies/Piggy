@@ -74,6 +74,9 @@ kotlin {
             implementation(libs.materii.pullrefresh)
 
             implementation(libs.compose.multiplatform.datetime.picker)
+
+            // PDF export
+            implementation("com.itextpdf:itext7-core:7.2.5")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

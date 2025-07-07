@@ -36,6 +36,10 @@ import com.miga.piggy.transaction.domain.usecases.GetTransactionsByTypeUseCase
 import com.miga.piggy.transaction.domain.usecases.GetTransactionsUseCase
 import com.miga.piggy.transaction.domain.usecases.UpdateTransactionUseCase
 import com.miga.piggy.transaction.presentation.viewmodel.AddTransactionViewModel
+import com.miga.piggy.transaction.presentation.viewmodel.TransactionListViewModel
+import com.miga.piggy.reports.presentation.viewmodel.ReportsViewModel
+import com.miga.piggy.reports.utils.PdfExporter
+import com.miga.piggy.reports.utils.PdfExporterImpl
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import dev.gitlive.firebase.firestore.firestore
@@ -62,6 +66,8 @@ val appModule = module {
 
     single<FinancialRepository> { FinancialRepositoryImpl(get()) }
 
+    single<PdfExporter> { PdfExporterImpl() }
+
     factory { GetBalanceUseCase(get()) }
     factory { UpdateBalanceUseCase(get()) }
     factory { GetBalanceUseCase(get()) }
@@ -83,4 +89,6 @@ val appModule = module {
     viewModelOf(::EditBalanceViewModel)
     viewModelOf(::AddTransactionViewModel)
     viewModelOf(::CategoryViewModel)
+    viewModelOf(::TransactionListViewModel)
+    viewModelOf(::ReportsViewModel)
 }

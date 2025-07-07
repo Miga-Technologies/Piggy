@@ -64,8 +64,11 @@ import com.miga.piggy.category.presentation.ui.CategoryScreen
 import com.miga.piggy.home.domain.entity.Category
 import com.miga.piggy.home.presentation.ui.helper.MenuItem
 import com.miga.piggy.home.presentation.viewmodel.HomeViewModel
+import com.miga.piggy.reports.presentation.ui.ReportsScreen
 import com.miga.piggy.transaction.presentation.ui.AddExpenseScreen
 import com.miga.piggy.transaction.presentation.ui.AddIncomeScreen
+import com.miga.piggy.transaction.presentation.ui.ViewExpensesScreen
+import com.miga.piggy.transaction.presentation.ui.ViewIncomeScreen
 import com.miga.piggy.utils.formatters.formatDouble
 import com.miga.piggy.utils.parsers.ColorParser
 import dev.materii.pullrefresh.PullRefreshIndicator
@@ -286,13 +289,13 @@ private fun MenuGrid(navigator: Navigator) {
             navigator.push(AddIncomeScreen)
         },
         MenuItem("Ver Gastos", Icons.AutoMirrored.Rounded.List) {
-            // TODO: Implementar tela de gastos
+            navigator.push(ViewExpensesScreen)
         },
         MenuItem("Ver Receitas", Icons.Rounded.Receipt) {
-            // TODO: Implementar tela de receitas
+            navigator.push(ViewIncomeScreen)
         },
         MenuItem("Relatórios", Icons.Rounded.BarChart) {
-            // TODO: Implementar tela de relatórios
+            navigator.push(ReportsScreen)
         },
         MenuItem("Categorias", Icons.Rounded.Category) {
             navigator.push(CategoryScreen)
