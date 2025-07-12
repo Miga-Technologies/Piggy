@@ -34,7 +34,6 @@ Piggy/
 - Kotlin Multiplatform support in IDE (Android Studio or IntelliJ)
 - Xcode for iOS builds
 - Java 17+
-- Node.js and Python (for backend integration)
 
 ### Run on Android
 
