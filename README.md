@@ -1,14 +1,14 @@
 # Piggy
 
-**Piggy** is a modern cross-platform finance app built with [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform), supporting **Android**, **iOS**, and **Desktop**.
+**Piggy** is a modern cross-platform finance app built with [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform), supporting **Android** and **iOS**.
 
 This project showcases the power of **Kotlin Multiplatform** and cutting-edge technologies such as **Firebase**, delivering a smooth and unified user experience across platforms.
 
 ## Features
 
-- Single codebase for Android, iOS, and Desktop.
+- Single codebase for Android and iOS.
 - Firebase integration (Auth, Firestore, Analytics).
-- Modular architecture with separation of platform-specific code (`androidMain`, `iosMain`, `desktopMain`).
+- Modular architecture with separation of platform-specific code (`androidMain`, `iosMain`).
 - Built with Compose Multiplatform and Jetpack Compose principles.
 - Scalable structure for adding more features and platforms (like web).
 
@@ -21,7 +21,6 @@ Piggy/
 │ │ ├── commonMain # Shared logic/UI
 │ │ ├── androidMain # Android-specific code
 │ │ ├── iosMain # iOS-specific code
-│ │ ├── desktopMain # Desktop-specific code
 │ ├── build.gradle.kts
 │ ├── google-services.json # Firebase config
 ├── iosApp/ # Xcode project for iOS
@@ -45,14 +44,6 @@ Piggy/
 
 ### Run on iOS
 Open the `iosApp` folder in Xcode and run the project.
-
-### Run on Desktop
-```bash
-./gradlew :composeApp:run
-```
-
-### Backend Integration
-Piggy relies on a custom backend (Piggy Integration) to bridge Firebase services with desktop platforms. Learn more: [Piggy Integration GitHub](https://github.com/Miga-Technologies/PiggyIntegration)
 
 ### Tech Stack
 - Kotlin Multiplatform
