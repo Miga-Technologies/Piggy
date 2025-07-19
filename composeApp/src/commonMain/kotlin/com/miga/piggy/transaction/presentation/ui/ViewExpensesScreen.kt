@@ -23,6 +23,7 @@ import com.miga.piggy.transaction.domain.entity.TransactionType
 import com.miga.piggy.transaction.presentation.viewmodel.TransactionListViewModel
 import com.miga.piggy.utils.formatters.formatDouble
 import com.miga.piggy.utils.formatters.formatDate
+import com.miga.piggy.ThemeManager
 import org.koin.compose.koinInject
 
 object ViewExpensesScreen : Screen {
@@ -34,6 +35,17 @@ object ViewExpensesScreen : Screen {
         val viewModel: TransactionListViewModel = koinInject()
         val authState by authViewModel.uiState.collectAsState()
         val uiState by viewModel.uiState.collectAsState()
+
+        var filterDialogOpen by remember { mutableStateOf(false) }
+        var selectedCategory by remember { mutableStateOf<String?>(null) }
+
+        val isDarkTheme = ThemeManager.getCurrentTheme()
+        val expenseRedColor = if (isDarkTheme) Color(0xFFB71C1C) else Color(0xFFD32F2F)
+        val expenseRedBg = if (isDarkTheme) Color(0xFF2C1212) else Color(0xFFFFEBEE)
+
+        val availableCategories = remember(uiState.transactions) {
+            uiState.transactions.map { it.category }.distinct().sorted()
+        }
 
         LaunchedEffect(authState.user?.id) {
             authState.user?.id?.let { userId ->
@@ -51,13 +63,26 @@ object ViewExpensesScreen : Screen {
                         }
                     },
                     actions = {
-                        IconButton(onClick = { /* TODO: Implement filter */ }) {
+                        IconButton(onClick = { filterDialogOpen = true }) {
                             Icon(Icons.Rounded.FilterList, "Filtros")
                         }
-                    }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 )
             }
         ) { paddingValues ->
+            val filteredTransactions = uiState.transactions.filter { transaction ->
+                val categoryMatch =
+                    selectedCategory == null || transaction.category == selectedCategory
+                categoryMatch
+            }
+            val filteredTotal = filteredTransactions.sumOf { it.amount }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -68,7 +93,7 @@ object ViewExpensesScreen : Screen {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFFFEBEE)
+                        containerColor = expenseRedBg
                     )
                 ) {
                     Column(
@@ -79,11 +104,18 @@ object ViewExpensesScreen : Screen {
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
-                            "R$ ${formatDouble(uiState.transactions.sumOf { it.amount })}",
+                            "R$ ${formatDouble(filteredTotal)}",
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFD32F2F)
+                            color = expenseRedColor
                         )
+                        if (selectedCategory != null) {
+                            Text(
+                                "Filtrado por: $selectedCategory",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 
@@ -96,13 +128,14 @@ object ViewExpensesScreen : Screen {
                     ) {
                         CircularProgressIndicator()
                     }
-                } else if (uiState.transactions.isEmpty()) {
+                } else if (filteredTransactions.isEmpty()) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            "Nenhum gasto encontrado",
+                            if (selectedCategory != null) "Nenhum gasto encontrado para esta categoria"
+                            else "Nenhum gasto encontrado",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -111,18 +144,28 @@ object ViewExpensesScreen : Screen {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(uiState.transactions) { transaction ->
-                            TransactionCard(transaction)
+                        items(filteredTransactions) { transaction ->
+                            TransactionCard(transaction, amountColor = expenseRedColor)
                         }
                     }
                 }
+            }
+
+            if (filterDialogOpen) {
+                FilterDialog(
+                    title = "Filtrar Gastos",
+                    availableCategories = availableCategories,
+                    selectedCategory = selectedCategory,
+                    onCategorySelected = { selectedCategory = it },
+                    onDismiss = { filterDialogOpen = false }
+                )
             }
         }
     }
 }
 
 @Composable
-private fun TransactionCard(transaction: Transaction) {
+private fun TransactionCard(transaction: Transaction, amountColor: Color) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -159,9 +202,91 @@ private fun TransactionCard(transaction: Transaction) {
                     text = "R$ ${formatDouble(transaction.amount)}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFD32F2F)
+                    color = amountColor
                 )
             }
         }
     }
+}
+
+@Composable
+private fun FilterDialog(
+    title: String,
+    availableCategories: List<String>,
+    selectedCategory: String?,
+    onCategorySelected: (String?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var tempCategory by remember { mutableStateOf(selectedCategory) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column {
+                Text(
+                    "Categoria:",
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 300.dp)
+                ) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = tempCategory == null,
+                                onClick = { tempCategory = null }
+                            )
+                            Text(
+                                text = "Todas as categorias",
+                                modifier = Modifier.padding(start = 8.dp),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+
+                    items(availableCategories) { category ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = tempCategory == category,
+                                onClick = { tempCategory = category }
+                            )
+                            Text(
+                                text = category,
+                                modifier = Modifier.padding(start = 8.dp),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onCategorySelected(tempCategory)
+                    onDismiss()
+                }
+            ) {
+                Text("Aplicar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
 }

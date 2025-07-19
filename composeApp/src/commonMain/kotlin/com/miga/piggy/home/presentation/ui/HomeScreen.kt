@@ -17,15 +17,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.List
-import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.Receipt
 import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -39,6 +40,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.surfaceColorAtElevation
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Switch
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -71,9 +75,9 @@ import com.miga.piggy.transaction.presentation.ui.ViewExpensesScreen
 import com.miga.piggy.transaction.presentation.ui.ViewIncomeScreen
 import com.miga.piggy.utils.formatters.formatDouble
 import com.miga.piggy.utils.parsers.ColorParser
+import com.miga.piggy.ThemeManager
 import dev.materii.pullrefresh.PullRefreshIndicator
 import dev.materii.pullrefresh.PullRefreshLayout
-import dev.materii.pullrefresh.PullRefreshState
 import dev.materii.pullrefresh.rememberPullRefreshState
 import org.koin.compose.koinInject
 
@@ -88,6 +92,9 @@ object HomeScreen : Screen {
         val homeUiState by homeViewModel.uiState.collectAsState()
 
         var isRefreshing by remember { mutableStateOf(false) }
+        var showMenuDialog by remember { mutableStateOf(false) }
+        val isDarkTheme by ThemeManager.isDarkTheme
+        val currentTheme = ThemeManager.getCurrentTheme()
 
         LaunchedEffect(authUiState.user) {
             if (authUiState.user == null) {
@@ -123,13 +130,12 @@ object HomeScreen : Screen {
                         actions = {
                             IconButton(
                                 onClick = {
-                                    authViewModel.logout()
-                                    navigator.replaceAll(AuthScreen)
+                                    showMenuDialog = true
                                 }
                             ) {
                                 Icon(
-                                    Icons.AutoMirrored.Rounded.Logout,
-                                    contentDescription = "Logout"
+                                    Icons.Rounded.MoreVert,
+                                    contentDescription = "Menu"
                                 )
                             }
                         },
@@ -210,6 +216,64 @@ object HomeScreen : Screen {
                             kotlinx.coroutines.delay(3000)
                             homeViewModel.clearError()
                         }
+                    }
+                }
+            )
+        }
+
+        if (showMenuDialog) {
+            AlertDialog(
+                onDismissRequest = { showMenuDialog = false },
+                title = { Text("Menu") },
+                text = {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Theme toggle
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Tema escuro")
+                            Switch(
+                                checked = currentTheme,
+                                onCheckedChange = { ThemeManager.setDarkTheme(it) }
+                            )
+                        }
+
+                        HorizontalDivider()
+
+                        // App version
+                        Column {
+                            Text(
+                                text = "Versão do App",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "1.0.0",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            authViewModel.logout()
+                            navigator.replaceAll(AuthScreen)
+                        }
+                    ) {
+                        Text("Logout")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showMenuDialog = false }
+                    ) {
+                        Text("Fechar")
                     }
                 }
             )
@@ -366,8 +430,7 @@ private fun MenuItemCard(item: MenuItem) {
 private fun ExpenseChartCard(expensesByCategory: Map<String, Double>) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(280.dp),
+            .fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
@@ -379,7 +442,7 @@ private fun ExpenseChartCard(expensesByCategory: Map<String, Double>) {
                 SimpleBarChart(expensesByCategory)
             } else {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -411,13 +474,21 @@ private fun SimpleBarChart(
         Color(0xFFE91E63)
     )
 
+    val itemHeight = 28.dp
+    val spacing = 8.dp
+    val totalHeight = (itemHeight * data.size) + (spacing * (data.size - 1).coerceAtLeast(0))
+
     Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(totalHeight),
+        verticalArrangement = Arrangement.spacedBy(spacing)
     ) {
         data.entries.forEachIndexed { index, (categoryName, value) ->
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(itemHeight),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -465,6 +536,11 @@ private fun FinancialSummary(
     totalIncome: Double,
     totalExpenses: Double
 ) {
+    val isDark = ThemeManager.getCurrentTheme()
+    // Theme-aware colors for income and expense
+    val incomeColor = if (isDark) Color(0xFF7CF49A) else Color(0xFF388E3C)
+    val expenseColor = if (isDark) Color(0xFFFFB4A9) else Color(0xFFD84315)
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -492,7 +568,7 @@ private fun FinancialSummary(
                         text = "R$ ${formatDouble(totalIncome)}",
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFF4CAF50)
+                        color = incomeColor
                     )
                 }
 
@@ -506,7 +582,7 @@ private fun FinancialSummary(
                         text = "R$ ${formatDouble(totalExpenses)}",
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFFFF5722)
+                        color = expenseColor
                     )
                 }
             }
@@ -526,8 +602,7 @@ private fun FinancialSummary(
                     text = "R$ ${formatDouble(totalIncome - totalExpenses)}",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
-                    color = if (totalIncome - totalExpenses >= 0)
-                        Color(0xFF4CAF50) else Color(0xFFFF5722)
+                    color = if (totalIncome - totalExpenses >= 0) incomeColor else expenseColor
                 )
             }
         }

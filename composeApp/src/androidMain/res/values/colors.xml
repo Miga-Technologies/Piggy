@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Light theme colors -->
+    <color name="primary_light">#6200EE</color>
+    <color name="splash_background_light">#FFFFFF</color>
+
+    <!-- Dark theme colors -->
+    <color name="primary_dark">#BB86FC</color>
+    <color name="splash_background_dark">#121212</color>
+
+    <!-- Common colors -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>
