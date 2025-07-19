@@ -20,10 +20,6 @@ import com.miga.piggy.auth.presentation.viewmodel.AuthViewModel
 import com.miga.piggy.reports.presentation.viewmodel.ReportsViewModel
 import com.miga.piggy.transaction.domain.entity.TransactionType
 import com.miga.piggy.utils.formatters.formatDouble
-import com.miga.piggy.utils.permission.checkPermission
-import dev.icerock.moko.permissions.Permission
-import dev.icerock.moko.permissions.compose.BindEffect
-import dev.icerock.moko.permissions.compose.rememberPermissionsControllerFactory
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -39,12 +35,6 @@ object ReportsScreen : Screen {
 
         val snackBarHostState = remember { SnackbarHostState() }
         val scope = rememberCoroutineScope()
-        val factory = rememberPermissionsControllerFactory()
-        val controller = remember(factory) {
-            factory.createPermissionsController()
-        }
-
-        BindEffect(controller)
 
         LaunchedEffect(authState.user?.id) {
             authState.user?.id?.let { userId ->
@@ -66,16 +56,8 @@ object ReportsScreen : Screen {
                         IconButton(
                             onClick = {
                                 scope.launch {
-                                    val hasPermission = checkPermission(
-                                        permission = Permission.WRITE_STORAGE,
-                                        controller = controller,
-                                        snackBarHostState = snackBarHostState
-                                    )
-
-                                    if (hasPermission) {
-                                        authState.user?.id?.let {
-                                            reportsViewModel.exportToPdf()
-                                        }
+                                    authState.user?.id?.let {
+                                        reportsViewModel.exportToPdf()
                                     }
                                 }
                             }
@@ -166,7 +148,12 @@ object ReportsScreen : Screen {
             // Show success message when PDF is exported
             if (reportsState.pdfExported) {
                 LaunchedEffect(reportsState.pdfExported) {
-                    // Show snackbar or notification
+                    scope.launch {
+                        snackBarHostState.showSnackbar(
+                            message = "PDF exportado com sucesso!",
+                            duration = SnackbarDuration.Short
+                        )
+                    }
                     kotlinx.coroutines.delay(2000)
                     reportsViewModel.clearPdfExported()
                 }
@@ -175,7 +162,12 @@ object ReportsScreen : Screen {
             // Show error if any
             reportsState.error?.let { error ->
                 LaunchedEffect(error) {
-                    // Show error snackbar
+                    scope.launch {
+                        snackBarHostState.showSnackbar(
+                            message = error,
+                            duration = SnackbarDuration.Short
+                        )
+                    }
                     kotlinx.coroutines.delay(3000)
                     reportsViewModel.clearError()
                 }

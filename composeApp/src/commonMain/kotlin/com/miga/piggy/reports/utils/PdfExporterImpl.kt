@@ -18,7 +18,7 @@ data class PdfExportResult(
     val error: String? = null
 )
 
-expect class PdfExporterImpl() : PdfExporter {
+expect class PdfExporterImpl : PdfExporter {
     override suspend fun exportReportToPdf(
         monthlyIncome: Double,
         monthlyExpenses: Double,

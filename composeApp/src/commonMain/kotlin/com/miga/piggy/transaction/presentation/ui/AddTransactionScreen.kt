@@ -16,11 +16,15 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -52,11 +56,11 @@ import com.miga.piggy.utils.datepicker.PlatformDatePicker
 import com.miga.piggy.utils.formatters.formatDate
 import org.koin.compose.koinInject
 
+@OptIn(ExperimentalMaterial3Api::class)
 class AddTransactionScreen(
     private val initialType: TransactionType = TransactionType.EXPENSE
 ) : Screen {
     @Composable
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val viewModel: AddTransactionViewModel = koinInject()
@@ -179,41 +183,37 @@ class AddTransactionScreen(
 
                 item {
                     Column {
-                        Text(
-                            text = "Categoria",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-
-                        Card(
-                            modifier = Modifier.fillMaxWidth()
+                        ExposedDropdownMenuBox(
+                            modifier = Modifier.fillMaxWidth(),
+                            expanded = uiState.isCategoryDropdownExpanded,
+                            onExpandedChange = { viewModel.setIsCategoryDropdownExpanded(it) }
                         ) {
-                            Column(
-                                modifier = Modifier.padding(8.dp)
+                            OutlinedTextField(
+                                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                                readOnly = true,
+                                value = uiState.selectedCategory?.name ?: "Selecione uma categoria",
+                                onValueChange = { },
+                                label = { Text("Categoria") },
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(
+                                        expanded = uiState.isCategoryDropdownExpanded
+                                    )
+                                },
+                                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                            )
+
+                            this@ExposedDropdownMenuBox.ExposedDropdownMenu(
+                                expanded = uiState.isCategoryDropdownExpanded,
+                                onDismissRequest = { viewModel.setIsCategoryDropdownExpanded(false) }
                             ) {
                                 uiState.categories.forEach { category ->
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .selectable(
-                                                selected = (category == uiState.selectedCategory),
-                                                onClick = { viewModel.selectCategory(category) },
-                                                role = Role.RadioButton
-                                            )
-                                            .padding(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        RadioButton(
-                                            selected = (category == uiState.selectedCategory),
-                                            onClick = { viewModel.selectCategory(category) }
-                                        )
-                                        Text(
-                                            text = category.name,
-                                            modifier = Modifier.padding(start = 8.dp),
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                    }
+                                    DropdownMenuItem(
+                                        onClick = {
+                                            viewModel.selectCategory(category)
+                                            viewModel.setIsCategoryDropdownExpanded(false)
+                                        },
+                                        text = { Text(category.name) }
+                                    )
                                 }
                             }
                         }

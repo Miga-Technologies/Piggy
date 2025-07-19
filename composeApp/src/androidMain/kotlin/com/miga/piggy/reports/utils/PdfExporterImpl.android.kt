@@ -1,6 +1,9 @@
 package com.miga.piggy.reports.utils
 
+import android.content.Context
+import android.content.Intent
 import android.os.Environment
+import androidx.core.content.FileProvider
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
 import com.itextpdf.layout.Document
@@ -20,7 +23,9 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
-actual class PdfExporterImpl : PdfExporter {
+actual class PdfExporterImpl(
+    private val context: Context
+) : PdfExporter {
 
     actual override suspend fun exportReportToPdf(
         monthlyIncome: Double,
@@ -32,8 +37,13 @@ actual class PdfExporterImpl : PdfExporter {
 
         try {
             val fileName = "relatorio_financeiro_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.pdf"
-            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            val file = File(downloadsDir, fileName)
+
+            // Usar o diretório de cache da aplicação para evitar problemas de permissão
+            val cacheDir = File(context.cacheDir, "reports")
+            if (!cacheDir.exists()) {
+                cacheDir.mkdirs()
+            }
+            val file = File(cacheDir, fileName)
 
             val pdfWriter = PdfWriter(FileOutputStream(file))
             val pdfDocument = PdfDocument(pdfWriter)
@@ -195,6 +205,9 @@ actual class PdfExporterImpl : PdfExporter {
 
             document.close()
 
+            // Compartilhar o PDF após a criação
+            sharePdf(file)
+
             PdfExportResult(
                 success = true,
                 filePath = file.absolutePath,
@@ -207,6 +220,31 @@ actual class PdfExporterImpl : PdfExporter {
                 filePath = null,
                 error = "Erro ao gerar PDF: ${e.message}"
             )
+        }
+    }
+
+    private fun sharePdf(file: File) {
+        try {
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_SUBJECT, "Relatório Financeiro")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+
+            val chooserIntent = Intent.createChooser(shareIntent, "Compartilhar relatório")
+            chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+            context.startActivity(chooserIntent)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }

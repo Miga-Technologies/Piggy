@@ -1,6 +1,7 @@
 package com.miga.piggy
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -92,8 +93,14 @@ fun App() {
         MaterialTheme(
             colorScheme = if (useDarkTheme) darkColorScheme() else lightColorScheme()
         ) {
-            Navigator(SplashScreen) { navigator ->
-                SlideTransition(navigator)
+            // Garantir que o background cubra toda a tela
+            androidx.compose.material3.Surface(
+                modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                Navigator(SplashScreen) { navigator ->
+                    SlideTransition(navigator)
+                }
             }
         }
     }

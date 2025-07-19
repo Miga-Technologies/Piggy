@@ -14,6 +14,7 @@ data class AddTransactionUiState(
     val selectedCategory: Category? = null,
     val categories: List<Category> = emptyList(),
     val selectedDate: Long = Clock.System.now().toEpochMilliseconds(),
+    val isCategoryDropdownExpanded: Boolean = false,
     val error: String? = null,
     val success: Boolean = false
 )

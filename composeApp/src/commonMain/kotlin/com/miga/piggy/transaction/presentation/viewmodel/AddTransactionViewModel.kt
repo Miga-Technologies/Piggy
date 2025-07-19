@@ -33,7 +33,7 @@ class AddTransactionViewModel(
                 val categories = getCategoriesUseCase()
                 _uiState.value = _uiState.value.copy(
                     categories = categories,
-                    selectedCategory = categories.firstOrNull()
+                    selectedCategory = null
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -60,6 +60,10 @@ class AddTransactionViewModel(
 
     fun selectCategory(category: Category) {
         _uiState.value = _uiState.value.copy(selectedCategory = category)
+    }
+
+    fun setIsCategoryDropdownExpanded(expanded: Boolean) {
+        _uiState.value = _uiState.value.copy(isCategoryDropdownExpanded = expanded)
     }
 
     fun updateDate(date: Long) {

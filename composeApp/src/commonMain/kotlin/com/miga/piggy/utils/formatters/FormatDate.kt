@@ -8,7 +8,8 @@ import kotlin.time.Instant
 
 @OptIn(ExperimentalTime::class)
 fun formatDate(timestampMillis: Long): String {
-    val timeZone = TimeZone.currentSystemDefault()
+    // Usar UTC para garantir consistência com o DatePicker
+    val timeZone = TimeZone.UTC
     val localDate = Instant.fromEpochMilliseconds(timestampMillis)
         .toLocalDateTime(timeZone)
         .date
