@@ -142,7 +142,9 @@ object HomeScreen : Screen {
                                             )
                                             Text(
                                                 text = authUiState.user?.displayName?.split(" ")
-                                                    ?.first() ?: "Usuário",
+                                                    ?.first()?.replaceFirstChar {
+                                                        if (it.isLowerCase()) it.titlecase() else it.toString()
+                                                    } ?: "Usuário",
                                                 style = MaterialTheme.typography.headlineMedium,
                                                 fontWeight = FontWeight.Bold,
                                                 color = MaterialTheme.colorScheme.onSurface
@@ -154,7 +156,9 @@ object HomeScreen : Screen {
                                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
                                             ProfileImagePicker(
-                                                name = authUiState.user?.displayName ?: "Usuário",
+                                                name = authUiState.user?.displayName?.replaceFirstChar {
+                                                    if (it.isLowerCase()) it.titlecase() else it.toString()
+                                                } ?: "Usuário",
                                                 imageUrl = authUiState.user?.photoUrl,
                                                 imageBase64 = profileImageBase64,
                                                 onImageClick = {
@@ -543,7 +547,9 @@ object HomeScreen : Screen {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 ProfileImagePicker(
-                                    name = authUiState.user?.displayName ?: "Usuário",
+                                    name = authUiState.user?.displayName?.replaceFirstChar {
+                                        if (it.isLowerCase()) it.titlecase() else it.toString()
+                                    } ?: "Usuário",
                                     imageUrl = authUiState.user?.photoUrl,
                                     imageBase64 = profileImageBase64,
                                     onImageClick = {
@@ -555,7 +561,9 @@ object HomeScreen : Screen {
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column {
                                     Text(
-                                        text = authUiState.user?.displayName ?: "Usuário",
+                                        text = authUiState.user?.displayName?.replaceFirstChar {
+                                            if (it.isLowerCase()) it.titlecase() else it.toString()
+                                        } ?: "Usuário",
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Medium,
                                         color = MaterialTheme.colorScheme.onSurface
@@ -737,7 +745,9 @@ object HomeScreen : Screen {
                     },
                     currentImageBase64 = profileImageBase64,
                     currentImageUrl = authUiState.user?.photoUrl,
-                    userName = authUiState.user?.displayName ?: "Usuário"
+                    userName = authUiState.user?.displayName?.replaceFirstChar {
+                        if (it.isLowerCase()) it.titlecase() else it.toString()
+                    } ?: "Usuário"
                 )
             }
         }

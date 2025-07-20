@@ -31,13 +31,20 @@ object EmailVerificationScreen : Screen {
         val viewModel: AuthViewModel = koinInject()
         val uiState by viewModel.uiState.collectAsState()
 
-        LaunchedEffect(uiState.isEmailVerified) {
-            if (uiState.isEmailVerified == true) {
-                navigator.replaceAll(AuthScreen)
+        LaunchedEffect(Unit) {
+            viewModel.checkEmailVerificationStatus()
+        }
+
+        LaunchedEffect(uiState.isEmailVerified, uiState.user) {
+            if (uiState.isEmailVerified == true && uiState.user != null) {
+                try {
+                    navigator.replaceAll(AuthScreen)
+                } catch (e: Exception) {
+                    println("Navigation error: ${e.message}")
+                }
             }
         }
 
-        // Background com gradiente sutil
         Box(
             modifier = Modifier
                 .fillMaxSize()

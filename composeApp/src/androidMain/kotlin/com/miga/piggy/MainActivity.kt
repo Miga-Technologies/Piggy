@@ -4,6 +4,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.google.firebase.FirebaseApp
 import com.miga.piggy.utils.ImagePicker
 import com.miga.piggy.utils.LocalImagePicker
@@ -27,6 +34,23 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
+            val view = LocalView.current
+            val systemInDarkTheme = isSystemInDarkTheme()
+            val isDarkTheme by ThemeManager.isDarkTheme
+            val useDarkTheme = isDarkTheme ?: systemInDarkTheme
+
+            // Configure status bar based on theme
+            LaunchedEffect(useDarkTheme) {
+                val window = window
+                val insetsController = WindowCompat.getInsetsController(window, view)
+
+                // Set status bar appearance - light icons for dark theme, dark icons for light theme
+                insetsController.isAppearanceLightStatusBars = !useDarkTheme
+
+                // Set navigation bar appearance  
+                insetsController.isAppearanceLightNavigationBars = !useDarkTheme
+            }
+
             CompositionLocalProvider(LocalImagePicker provides imagePicker) {
                 App()
             }

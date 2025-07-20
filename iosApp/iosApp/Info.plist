@@ -5,9 +5,11 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
     <key>UIViewControllerBasedStatusBarAppearance</key>
-    <false />
+    <true />
     <key>UIStatusBarStyle</key>
     <string>UIStatusBarStyleDefault</string>
+    <key>UIUserInterfaceStyle</key>
+    <string>Automatic</string>
 
     <!-- Permissões para câmera e galeria -->
     <key>NSCameraUsageDescription</key>

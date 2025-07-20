@@ -98,7 +98,12 @@ object RegisterScreen : Screen {
                         // Campo de nome
                         OutlinedTextField(
                             value = formState.displayName,
-                            onValueChange = viewModel::updateDisplayName,
+                            onValueChange = { value ->
+                                val capitalizedValue = value.replaceFirstChar {
+                                    if (it.isLowerCase()) it.titlecase() else it.toString()
+                                }
+                                viewModel.updateDisplayName(capitalizedValue)
+                            },
                             label = { Text("Nome") },
                             leadingIcon = {
                                 Icon(
@@ -185,7 +190,6 @@ object RegisterScreen : Screen {
                                         formState.email.isNotBlank() && formState.password.isNotBlank()
                                     ) {
                                         viewModel.register()
-                                        navigator.replaceAll(EmailVerificationScreen)
                                     }
                                 }
                             ),
@@ -206,7 +210,6 @@ object RegisterScreen : Screen {
                                     formState.email.isNotBlank() && formState.password.isNotBlank()
                                 ) {
                                     viewModel.register()
-                                    navigator.replaceAll(EmailVerificationScreen)
                                 }
                             },
                             enabled = !uiState.isLoading && formState.displayName.isNotBlank() &&
@@ -284,6 +287,12 @@ object RegisterScreen : Screen {
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+
+        LaunchedEffect(uiState.user) {
+            if (uiState.user != null && !uiState.isLoading && uiState.error == null) {
+                navigator.replaceAll(EmailVerificationScreen)
             }
         }
     }
