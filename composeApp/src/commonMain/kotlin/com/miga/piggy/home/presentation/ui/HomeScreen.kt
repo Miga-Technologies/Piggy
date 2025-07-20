@@ -24,6 +24,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
@@ -45,6 +48,8 @@ import com.miga.piggy.utils.formatters.formatDouble
 import com.miga.piggy.utils.parsers.ColorParser
 import com.miga.piggy.utils.theme.*
 import com.miga.piggy.ThemeManager
+import com.miga.piggy.auth.presentation.state.AuthUiState
+import com.miga.piggy.home.presentation.state.HomeUiState
 import com.miga.piggy.transaction.domain.entity.TransactionType
 import dev.materii.pullrefresh.PullRefreshIndicator
 import dev.materii.pullrefresh.PullRefreshLayout
@@ -64,6 +69,7 @@ object HomeScreen : Screen {
         val homeViewModel: HomeViewModel = koinInject()
         val authUiState by authViewModel.uiState.collectAsState()
         val homeUiState by homeViewModel.uiState.collectAsState()
+        val profileImageBase64 by authViewModel.profileImageBase64.collectAsState()
 
         var isRefreshing by remember { mutableStateOf(false) }
         var showMenuDialog by remember { mutableStateOf(false) }
@@ -106,80 +112,91 @@ object HomeScreen : Screen {
                 Scaffold(
                     containerColor = Color.Transparent,
                     topBar = {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surface
-                            ),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surface)
+                                .windowInsetsPadding(WindowInsets.statusBars)
                         ) {
-                            Column(
-                                modifier = Modifier.padding(24.dp)
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                ),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                             ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                Column(
+                                    modifier = Modifier.padding(24.dp)
                                 ) {
-                                    Column {
-                                        Text(
-                                            text = "Olá,",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Text(
-                                            text = authUiState.user?.displayName?.split(" ")
-                                                ?.first() ?: "Usuário",
-                                            style = MaterialTheme.typography.headlineMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-
                                     Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        ProfileImagePicker(
-                                            name = authUiState.user?.displayName ?: "Usuário",
-                                            imageUrl = authUiState.user?.photoUrl,
-                                            onImageClick = { showImagePicker = true }
-                                        )
-
-                                        IconButton(
-                                            onClick = { showMenuDialog = true }
-                                        ) {
-                                            Icon(
-                                                Icons.Rounded.MoreVert,
-                                                contentDescription = "Menu",
-                                                tint = MaterialTheme.colorScheme.onSurface
+                                        Column {
+                                            Text(
+                                                text = "Olá,",
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = authUiState.user?.displayName?.split(" ")
+                                                    ?.first() ?: "Usuário",
+                                                style = MaterialTheme.typography.headlineMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface
                                             )
                                         }
+
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            ProfileImagePicker(
+                                                name = authUiState.user?.displayName ?: "Usuário",
+                                                imageUrl = authUiState.user?.photoUrl,
+                                                imageBase64 = profileImageBase64,
+                                                onImageClick = {
+                                                    println("DEBUG: ProfileImagePicker clicked, setting showImagePicker = true") // Debug log
+                                                    showImagePicker = true
+                                                }
+                                            )
+
+                                            IconButton(
+                                                onClick = { showMenuDialog = true }
+                                            ) {
+                                                Icon(
+                                                    Icons.Rounded.MoreVert,
+                                                    contentDescription = "Menu",
+                                                    tint = MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
+                                        }
                                     }
-                                }
 
-                                Spacer(modifier = Modifier.height(24.dp))
+                                    Spacer(modifier = Modifier.height(24.dp))
 
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    GradientValueCard(
-                                        title = "Receitas",
-                                        value = "R$ ${formatDouble(homeUiState.monthlyIncome)}",
-                                        gradient = PiggyGradients.IncomeGradient,
-                                        icon = Icons.AutoMirrored.Rounded.TrendingUp,
-                                        modifier = Modifier.weight(1f)
-                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        GradientValueCard(
+                                            title = "Receitas",
+                                            value = "R$ ${formatDouble(homeUiState.monthlyIncome)}",
+                                            gradient = PiggyGradients.IncomeGradient,
+                                            icon = Icons.AutoMirrored.Rounded.TrendingUp,
+                                            modifier = Modifier.weight(1f)
+                                        )
 
-                                    GradientValueCard(
-                                        title = "Gastos",
-                                        value = "R$ ${formatDouble(homeUiState.monthlyExpenses)}",
-                                        gradient = PiggyGradients.ExpenseGradient,
-                                        icon = Icons.AutoMirrored.Rounded.TrendingDown,
-                                        modifier = Modifier.weight(1f)
-                                    )
+                                        GradientValueCard(
+                                            title = "Gastos",
+                                            value = "R$ ${formatDouble(homeUiState.monthlyExpenses)}",
+                                            gradient = PiggyGradients.ExpenseGradient,
+                                            icon = Icons.AutoMirrored.Rounded.TrendingDown,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -520,7 +537,11 @@ object HomeScreen : Screen {
                                 ProfileImagePicker(
                                     name = authUiState.user?.displayName ?: "Usuário",
                                     imageUrl = authUiState.user?.photoUrl,
-                                    onImageClick = { showImagePicker = true },
+                                    imageBase64 = profileImageBase64,
+                                    onImageClick = {
+                                        println("DEBUG: ProfileImagePicker (menu dialog) clicked, setting showImagePicker = true") // Debug log
+                                        showImagePicker = true
+                                    },
                                     modifier = Modifier.size(40.dp)
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
@@ -677,24 +698,33 @@ object HomeScreen : Screen {
         }
 
         if (showImagePicker) {
+            println("DEBUG: Showing ImagePickerWithPermissions dialog") // Debug log
             ImagePickerWithPermissions(
                 onImageSelected = { imageData ->
+                    println("DEBUG: onImageSelected called with data size: ${imageData?.size ?: 0}") // Debug log
                     imageData?.let { data ->
-                        authViewModel.updateProfileImage(data)
+                        println("DEBUG: Calling saveProfileImage with ${data.size} bytes") // Debug log
+                        authViewModel.saveProfileImage(data)
                     }
                     showImagePicker = false
                 },
                 onPermissionDenied = {
-                    // TODO: Mostrar mensagem de erro sobre permissão
+                    println("DEBUG: onPermissionDenied called") // Debug log
                     showImagePicker = false
                 }
             ) { pickFromGallery, pickFromCamera ->
+                println("DEBUG: Showing ImageSelectionDialog") // Debug log
                 ImageSelectionDialog(
-                    onDismissRequest = { showImagePicker = false },
+                    onDismissRequest = {
+                        println("DEBUG: ImageSelectionDialog dismissed") // Debug log
+                        showImagePicker = false
+                    },
                     onGalleryClick = {
+                        println("DEBUG: Gallery clicked") // Debug log
                         pickFromGallery()
                     },
                     onCameraClick = {
+                        println("DEBUG: Camera clicked") // Debug log
                         pickFromCamera()
                     }
                 )

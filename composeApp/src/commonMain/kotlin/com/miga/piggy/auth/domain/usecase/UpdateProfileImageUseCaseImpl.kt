@@ -12,7 +12,6 @@ class UpdateProfileImageUseCaseImpl(
     override suspend fun invoke(userId: String, imageData: ByteArray): AuthResult<String> {
         return when (val uploadResult = imageRepository.uploadProfileImage(userId, imageData)) {
             is AuthResult.Success -> {
-                // Atualizar o perfil do usuário com a nova URL da imagem
                 when (val updateResult = authRepository.updateUserProfile(
                     displayName = null,
                     photoUrl = uploadResult.data

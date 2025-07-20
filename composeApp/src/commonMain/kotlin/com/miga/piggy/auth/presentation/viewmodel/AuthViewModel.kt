@@ -2,6 +2,7 @@ package com.miga.piggy.auth.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.miga.piggy.auth.data.repository.ProfileImageRepository
 import com.miga.piggy.auth.domain.model.AuthResult
 import com.miga.piggy.auth.domain.model.User
 import com.miga.piggy.auth.domain.usecase.EmailVerificationUseCase
@@ -23,7 +24,8 @@ class AuthViewModel(
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val logoutUseCase: LogoutUseCase,
     private val emailVerificationUseCase: EmailVerificationUseCase,
-    private val updateProfileImageUseCase: UpdateProfileImageUseCase
+    private val updateProfileImageUseCase: UpdateProfileImageUseCase,
+    private val profileImageRepository: ProfileImageRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -31,6 +33,9 @@ class AuthViewModel(
 
     private val _formState = MutableStateFlow(LoginFormState())
     val formState: StateFlow<LoginFormState> = _formState.asStateFlow()
+
+    private val _profileImageBase64 = MutableStateFlow<String?>(null)
+    val profileImageBase64: StateFlow<String?> = _profileImageBase64.asStateFlow()
 
     init {
         checkCurrentUser()
@@ -54,6 +59,7 @@ class AuthViewModel(
                                 isEmailVerified = true,
                                 error = null
                             )
+                            loadProfileImage(result.data.id)
                         } else {
                             logout()
                             _uiState.value = _uiState.value.copy(
@@ -115,7 +121,7 @@ class AuthViewModel(
                     currentForm.displayName
                 )
             ) {
-                is AuthResult.Success<User> -> {
+                is AuthResult.Success -> {
                     emailVerificationUseCase.resendVerificationEmail()
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -144,6 +150,7 @@ class AuthViewModel(
                 is AuthResult.Success -> {
                     _uiState.value = _uiState.value.copy(user = null)
                     clearForm()
+                    _profileImageBase64.value = null
                 }
 
                 is AuthResult.Error -> {
@@ -164,6 +171,7 @@ class AuthViewModel(
                     if (result.data != null) {
                         try {
                             _uiState.value = _uiState.value.copy(user = result.data)
+                            loadProfileImage(result.data.id)
                         } catch (e: Exception) {
                             if (isUserDeletedError(e)) {
                                 logout()
@@ -231,6 +239,7 @@ class AuthViewModel(
                                 user = user,
                                 isEmailVerified = isVerified
                             )
+                            loadProfileImage(user.id)
                         } catch (e: Exception) {
                             if (isUserDeletedError(e)) {
                                 logout()
@@ -317,7 +326,27 @@ class AuthViewModel(
         _formState.value = LoginFormState()
     }
 
-    fun updateProfileImage(imageData: ByteArray) {
+    private fun loadProfileImage(userId: String) {
+        viewModelScope.launch {
+            println("Loading profile image for userId: $userId")
+            profileImageRepository.getProfileImage(userId)
+                .onSuccess { base64Image ->
+                    if (base64Image != null) {
+                        println("Profile image loaded successfully: ${base64Image.take(20)}...")
+                    } else {
+                        println("No profile image found for user")
+                    }
+                    _profileImageBase64.value = base64Image
+                }
+                .onFailure { exception ->
+                    println("Failed to load profile image: ${exception.message}")
+                    // Silenciosamente falha se não houver imagem
+                    _profileImageBase64.value = null
+                }
+        }
+    }
+
+    fun saveProfileImage(imageData: ByteArray) {
         val currentUser = _uiState.value.user
         if (currentUser == null) {
             _uiState.value = _uiState.value.copy(error = "Usuário não está logado")
@@ -325,30 +354,26 @@ class AuthViewModel(
         }
 
         viewModelScope.launch {
+            println("Saving profile image for userId: ${currentUser.id}")
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
-            when (val result = updateProfileImageUseCase(currentUser.id, imageData)) {
-                is AuthResult.Success -> {
-                    // Atualizar o usuário com a nova URL da foto
-                    val updatedUser = currentUser.copy(photoUrl = result.data)
+            profileImageRepository.saveProfileImage(currentUser.id, imageData)
+                .onSuccess { base64Image ->
+                    println("Profile image saved successfully: ${base64Image.take(20)}...")
+                    _profileImageBase64.value = base64Image
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        user = updatedUser,
                         error = null
                     )
+                    println("UI state updated, loading should be false now")
                 }
-
-                is AuthResult.Error -> {
+                .onFailure { exception ->
+                    println("Failed to save profile image: ${exception.message}")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = result.exception.message
+                        error = "Erro ao salvar imagem: ${exception.message}"
                     )
                 }
-
-                is AuthResult.Loading -> {
-                    _uiState.value = _uiState.value.copy(isLoading = true)
-                }
-            }
         }
     }
 }

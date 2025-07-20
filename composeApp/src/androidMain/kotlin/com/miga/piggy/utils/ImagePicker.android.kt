@@ -42,12 +42,19 @@ actual class ImagePicker {
             val callback = galleryCallback
             galleryCallback = null
 
+            println("DEBUG: Gallery result received - resultCode: ${result.resultCode}, data: ${result.data}") // Debug log
             if (result.resultCode == Activity.RESULT_OK) {
                 result.data?.data?.let { uri ->
+                    println("DEBUG: Gallery URI received: $uri") // Debug log
                     val imageData = uriToByteArray(activity, uri)
+                    println("DEBUG: Converted image data size: ${imageData?.size ?: 0}") // Debug log
                     callback?.invoke(imageData)
-                } ?: callback?.invoke(null)
+                } ?: run {
+                    println("DEBUG: Gallery result data or URI is null") // Debug log
+                    callback?.invoke(null)
+                }
             } else {
+                println("DEBUG: Gallery result cancelled or failed") // Debug log
                 callback?.invoke(null)
             }
         }
@@ -95,19 +102,68 @@ actual class ImagePicker {
 
     private fun uriToByteArray(context: Context, uri: Uri): ByteArray? {
         return try {
+            println("DEBUG: Starting uriToByteArray for URI: $uri") // Debug log
             val inputStream = context.contentResolver.openInputStream(uri)
+            if (inputStream == null) {
+                println("DEBUG: Failed to open input stream for URI: $uri") // Debug log
+                return null
+            }
+
+            println("DEBUG: Input stream opened successfully") // Debug log
             val bitmap = BitmapFactory.decodeStream(inputStream)
-            inputStream?.close()
-            bitmapToByteArray(bitmap)
+            inputStream.close()
+
+            if (bitmap == null) {
+                println("DEBUG: Failed to decode bitmap from stream") // Debug log
+                return null
+            }
+
+            println("DEBUG: Bitmap decoded successfully - width: ${bitmap.width}, height: ${bitmap.height}") // Debug log
+            val result = bitmapToByteArray(bitmap)
+            println("DEBUG: Final byte array size: ${result.size}") // Debug log
+            result
         } catch (e: Exception) {
+            println("DEBUG: Exception in uriToByteArray: ${e.message}") // Debug log
+            e.printStackTrace()
             null
         }
     }
 
     private fun bitmapToByteArray(bitmap: Bitmap): ByteArray {
-        val outputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
-        return outputStream.toByteArray()
+        // Redimensionar a imagem se for muito grande
+        val maxSize = 800
+        val resizedBitmap = if (bitmap.width > maxSize || bitmap.height > maxSize) {
+            resizeBitmap(bitmap, maxSize)
+        } else {
+            bitmap
+        }
+
+        val stream = ByteArrayOutputStream()
+        // Usar compressão mais agressiva (30% quality)
+        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 30, stream)
+        val byteArray = stream.toByteArray()
+
+        println("DEBUG: Original bitmap size: ${bitmap.width}x${bitmap.height}")
+        println("DEBUG: Resized bitmap size: ${resizedBitmap.width}x${resizedBitmap.height}")
+        println("DEBUG: Compressed byte array size: ${byteArray.size} bytes")
+
+        // Limpar recursos se criamos uma nova bitmap
+        if (resizedBitmap != bitmap) {
+            resizedBitmap.recycle()
+        }
+
+        return byteArray
+    }
+
+    private fun resizeBitmap(bitmap: Bitmap, maxSize: Int): Bitmap {
+        val width = bitmap.width
+        val height = bitmap.height
+
+        val ratio = minOf(maxSize.toFloat() / width, maxSize.toFloat() / height)
+        val newWidth = (width * ratio).toInt()
+        val newHeight = (height * ratio).toInt()
+
+        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
     }
 }
 
@@ -138,10 +194,13 @@ actual fun ImagePickerWithPermissions(
         { // pickFromGallery
             scope.launch {
                 try {
+                    println("DEBUG: Starting gallery picker coroutine") // Debug log
                     // Para galeria não precisa de permissão especial no Android moderno
                     val imageData = imagePicker.pickImageFromGallery()
+                    println("DEBUG: Gallery picker returned data size: ${imageData?.size ?: 0}") // Debug log
                     onImageSelected(imageData)
                 } catch (e: Exception) {
+                    println("DEBUG: Exception in gallery picker: ${e.message}") // Debug log
                     onImageSelected(null)
                 }
             }

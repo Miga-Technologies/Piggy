@@ -4,6 +4,8 @@ import com.miga.piggy.auth.data.datasource.AuthDataSource
 import com.miga.piggy.auth.data.datasource.FirebaseAuthDataSource
 import com.miga.piggy.auth.data.repository.AuthRepositoryImpl
 import com.miga.piggy.auth.data.repository.FirebaseImageRepository
+import com.miga.piggy.auth.data.repository.FirestoreProfileImageRepository
+import com.miga.piggy.auth.data.repository.ProfileImageRepository
 import com.miga.piggy.auth.domain.repository.AuthRepository
 import com.miga.piggy.auth.domain.repository.ImageRepository
 import com.miga.piggy.auth.domain.usecase.EmailVerificationUseCase
@@ -53,6 +55,7 @@ expect val platformModule: Module
 
 val appModule = module {
     single<FirebaseFirestore> { Firebase.firestore }
+    single<ProfileImageRepository> { FirestoreProfileImageRepository() }
 
     single<AuthDataSource> { FirebaseAuthDataSource() }
 
@@ -86,7 +89,7 @@ val appModule = module {
     factory { GetTransactionsByTypeUseCase(get()) }
     factory { GetFinancialSummaryUseCase(get(), get()) }
 
-    viewModelOf(::AuthViewModel)
+    factory { AuthViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModelOf(::HomeViewModel)
     viewModelOf(::EditBalanceViewModel)
     viewModelOf(::AddTransactionViewModel)

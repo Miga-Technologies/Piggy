@@ -1,5 +1,6 @@
 package com.miga.piggy.utils.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,14 +13,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.miga.piggy.utils.Base64Utils
 
 @Composable
 fun ProfileImagePicker(
     name: String,
     imageUrl: String? = null,
+    imageBase64: String? = null,
     onImageClick: () -> Unit,
     modifier: Modifier = Modifier,
     size: Dp = 40.dp
@@ -31,33 +36,64 @@ fun ProfileImagePicker(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            if (!imageUrl.isNullOrEmpty()) {
-                // TODO: Carregar imagem real usando biblioteca de imagens
-                // Por enquanto mostrar ícone indicando que há uma imagem
-                Icon(
-                    Icons.Rounded.PhotoLibrary,
-                    contentDescription = "Foto de perfil",
-                    modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            } else {
-                // Mostrar inicial do nome como fallback
-                Text(
-                    text = name.firstOrNull()?.uppercaseChar()?.toString() ?: "U",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+            when {
+                // Prioridade 1: Imagem Base64 do Firestore
+                !imageBase64.isNullOrEmpty() -> {
+                    val imageBitmap = remember(imageBase64) {
+                        try {
+                            base64ToImageBitmap(imageBase64)
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+
+                    imageBitmap?.let { bitmap ->
+                        Image(
+                            bitmap = bitmap,
+                            contentDescription = "Foto de perfil",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(12.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                    } ?: ProfileInitial(name)
+                }
+                // Prioridade 2: URL da imagem (Google, etc.)
+                !imageUrl.isNullOrEmpty() -> {
+                    Icon(
+                        Icons.Rounded.PhotoLibrary,
+                        contentDescription = "Foto de perfil",
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                // Prioridade 3: Inicial do nome (padrão)
+                else -> {
+                    ProfileInitial(name)
+                }
             }
         }
     }
 }
+
+@Composable
+private fun ProfileInitial(name: String) {
+    Text(
+        text = name.firstOrNull()?.uppercaseChar()?.toString() ?: "U",
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onPrimaryContainer
+    )
+}
+
+expect fun base64ToImageBitmap(base64String: String): ImageBitmap?
 
 @Composable
 fun ImageSelectionDialog(
