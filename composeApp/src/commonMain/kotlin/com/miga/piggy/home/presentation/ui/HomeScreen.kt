@@ -726,7 +726,10 @@ object HomeScreen : Screen {
                     onCameraClick = {
                         println("DEBUG: Camera clicked") // Debug log
                         pickFromCamera()
-                    }
+                    },
+                    currentImageBase64 = profileImageBase64,
+                    currentImageUrl = authUiState.user?.photoUrl,
+                    userName = authUiState.user?.displayName ?: "Usuário"
                 )
             }
         }
@@ -808,7 +811,7 @@ private fun QuickActionsGrid(navigator: Navigator) {
                 Text(
                     text = "Ver Gastos",
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -842,7 +845,7 @@ private fun QuickActionsGrid(navigator: Navigator) {
                 Text(
                     text = "Ver Receitas",
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -876,7 +879,7 @@ private fun QuickActionsGrid(navigator: Navigator) {
                 Text(
                     text = "Relatórios",
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Medium
                 )
             }

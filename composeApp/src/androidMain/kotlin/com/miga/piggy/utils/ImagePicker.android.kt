@@ -66,11 +66,20 @@ actual class ImagePicker {
             val callback = cameraCallback
             cameraCallback = null
 
+            println("DEBUG: Camera result received - resultCode: ${result.resultCode}, data: ${result.data}") // Debug log
             if (result.resultCode == Activity.RESULT_OK) {
                 val bitmap = result.data?.extras?.get("data") as? Bitmap
-                val imageData = bitmap?.let { bitmapToByteArray(it) }
-                callback?.invoke(imageData)
+                if (bitmap != null) {
+                    println("DEBUG: Camera bitmap received - width: ${bitmap.width}, height: ${bitmap.height}") // Debug log
+                    val imageData = bitmapToByteArray(bitmap)
+                    println("DEBUG: Camera image converted to byte array - size: ${imageData.size}") // Debug log
+                    callback?.invoke(imageData)
+                } else {
+                    println("DEBUG: Camera bitmap is null") // Debug log
+                    callback?.invoke(null)
+                }
             } else {
+                println("DEBUG: Camera result cancelled or failed") // Debug log
                 callback?.invoke(null)
             }
         }
@@ -91,12 +100,29 @@ actual class ImagePicker {
 
     actual suspend fun pickImageFromCamera(): ByteArray? {
         return suspendCancellableCoroutine { continuation ->
+            println("DEBUG: Starting camera picker") // Debug log
             cameraCallback = { imageData ->
+                println("DEBUG: Camera callback invoked with data size: ${imageData?.size ?: 0}") // Debug log
                 continuation.resume(imageData)
             }
 
             val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-            cameraLauncher?.launch(intent)
+            println("DEBUG: Camera intent created: $intent") // Debug log
+
+            // Verificar se há apps que podem lidar com o intent
+            val packageManager =
+                cameraLauncher?.let { launcher ->
+                    // Tentar obter o PackageManager do contexto
+                    null // Por enquanto, vamos continuar sem verificação
+                }
+
+            try {
+                println("DEBUG: Launching camera intent") // Debug log
+                cameraLauncher?.launch(intent)
+            } catch (e: Exception) {
+                println("DEBUG: Exception launching camera intent: ${e.message}") // Debug log
+                continuation.resume(null)
+            }
         }
     }
 
@@ -208,6 +234,7 @@ actual fun ImagePickerWithPermissions(
         { // pickFromCamera  
             scope.launch {
                 try {
+                    println("DEBUG: Starting camera permission check") // Debug log
                     // Verificar permissão usando moko-permissions
                     val hasPermission = checkPermission(
                         permission = Permission.CAMERA,
@@ -215,13 +242,19 @@ actual fun ImagePickerWithPermissions(
                         snackBarHostState = snackbarHostState
                     )
 
+                    println("DEBUG: Camera permission result: $hasPermission") // Debug log
                     if (hasPermission) {
+                        println("DEBUG: Camera permission granted, starting camera picker") // Debug log
                         val imageData = imagePicker.pickImageFromCamera()
+                        println("DEBUG: Camera picker finished with data size: ${imageData?.size ?: 0}") // Debug log
                         onImageSelected(imageData)
                     } else {
+                        println("DEBUG: Camera permission denied") // Debug log
                         onPermissionDenied()
                     }
                 } catch (e: Exception) {
+                    println("DEBUG: Exception in camera picker flow: ${e.message}") // Debug log
+                    e.printStackTrace()
                     onPermissionDenied()
                     onImageSelected(null)
                 }

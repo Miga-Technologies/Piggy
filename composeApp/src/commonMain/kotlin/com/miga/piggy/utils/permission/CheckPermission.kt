@@ -9,18 +9,11 @@ import dev.icerock.moko.permissions.Permission
 import dev.icerock.moko.permissions.PermissionsController
 import dev.icerock.moko.permissions.RequestCanceledException
 
-expect fun isDesktopPlatform(): Boolean
-
 suspend fun checkPermission(
     permission: Permission,
     controller: PermissionsController,
     snackBarHostState: SnackbarHostState
 ): Boolean {
-
-    if (isDesktopPlatform()) {
-        return true
-    }
-
     val granted = controller.isPermissionGranted(permission)
 
     if (!granted) {
@@ -52,7 +45,7 @@ suspend fun checkPermission(
             return false
         }
     } else {
-        snackBarHostState.showSnackbar("Permission already granted")
-        return false
+        // Se a permissão já está concedida, retornar true
+        return true
     }
 }
