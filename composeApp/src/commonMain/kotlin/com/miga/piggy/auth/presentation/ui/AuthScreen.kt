@@ -1,6 +1,7 @@
 package com.miga.piggy.auth.presentation.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -13,7 +14,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,6 +29,8 @@ import com.miga.piggy.auth.presentation.viewmodel.AuthViewModel
 import com.miga.piggy.home.presentation.ui.HomeScreen
 import com.miga.piggy.utils.theme.PiggyGradients
 import org.koin.compose.koinInject
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 
 object AuthScreen : Screen {
     @Composable
@@ -32,6 +39,7 @@ object AuthScreen : Screen {
         val viewModel: AuthViewModel = koinInject()
         val uiState by viewModel.uiState.collectAsState()
         val formState by viewModel.formState.collectAsState()
+        val focusManager = LocalFocusManager.current
 
         LaunchedEffect(uiState.user, uiState.isEmailVerified) {
             if (uiState.user != null && uiState.isEmailVerified == true) {
@@ -50,6 +58,11 @@ object AuthScreen : Screen {
                         )
                     )
                 )
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = {
+                        focusManager.clearFocus()
+                    })
+                }
         ) {
             Column(
                 modifier = Modifier
@@ -132,7 +145,12 @@ object AuthScreen : Screen {
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                            )
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Email,
+                                imeAction = ImeAction.Next
+                            ),
+                            singleLine = true
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -157,7 +175,20 @@ object AuthScreen : Screen {
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                            )
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Password,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    focusManager.clearFocus()
+                                    if (!uiState.isLoading && formState.email.isNotBlank() && formState.password.isNotBlank()) {
+                                        viewModel.login()
+                                    }
+                                }
+                            ),
+                            singleLine = true
                         )
 
                         Spacer(modifier = Modifier.height(28.dp))
@@ -169,6 +200,7 @@ object AuthScreen : Screen {
                                 .height(52.dp)
                                 .clip(RoundedCornerShape(16.dp)),
                             onClick = {
+                                focusManager.clearFocus() // Dismissar teclado ao clicar no botão
                                 if (!uiState.isLoading && formState.email.isNotBlank() && formState.password.isNotBlank()) {
                                     viewModel.login()
                                 }
@@ -210,7 +242,10 @@ object AuthScreen : Screen {
 
                         // Link para cadastro
                         TextButton(
-                            onClick = { navigator.push(RegisterScreen) },
+                            onClick = {
+                                focusManager.clearFocus()
+                                navigator.push(RegisterScreen)
+                            },
                             colors = ButtonDefaults.textButtonColors(
                                 contentColor = MaterialTheme.colorScheme.primary
                             )

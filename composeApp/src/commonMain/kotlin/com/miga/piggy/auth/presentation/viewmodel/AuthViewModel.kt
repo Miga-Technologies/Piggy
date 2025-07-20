@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.miga.piggy.auth.data.repository.ProfileImageRepository
 import com.miga.piggy.auth.domain.model.AuthResult
-import com.miga.piggy.auth.domain.model.User
 import com.miga.piggy.auth.domain.usecase.EmailVerificationUseCase
 import com.miga.piggy.auth.domain.usecase.GetCurrentUserUseCase
 import com.miga.piggy.auth.domain.usecase.LoginUseCase

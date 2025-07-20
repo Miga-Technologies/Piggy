@@ -1,8 +1,11 @@
 package com.miga.piggy.auth.presentation.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Lock
@@ -14,7 +17,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,8 +39,8 @@ object RegisterScreen : Screen {
         val viewModel: AuthViewModel = koinInject()
         val uiState by viewModel.uiState.collectAsState()
         val formState by viewModel.formState.collectAsState()
+        val focusManager = LocalFocusManager.current
 
-        // Background com gradiente sutil
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -45,6 +52,11 @@ object RegisterScreen : Screen {
                         )
                     )
                 )
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = {
+                        focusManager.clearFocus()
+                    })
+                }
         ) {
             Column(
                 modifier = Modifier
@@ -102,7 +114,12 @@ object RegisterScreen : Screen {
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                            )
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Text,
+                                imeAction = ImeAction.Next
+                            ),
+                            singleLine = true
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -126,7 +143,12 @@ object RegisterScreen : Screen {
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                            )
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Email,
+                                imeAction = ImeAction.Next
+                            ),
+                            singleLine = true
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -151,7 +173,23 @@ object RegisterScreen : Screen {
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                            )
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Password,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    focusManager.clearFocus()
+                                    if (!uiState.isLoading && formState.displayName.isNotBlank() &&
+                                        formState.email.isNotBlank() && formState.password.isNotBlank()
+                                    ) {
+                                        viewModel.register()
+                                        navigator.replaceAll(EmailVerificationScreen)
+                                    }
+                                }
+                            ),
+                            singleLine = true
                         )
 
                         Spacer(modifier = Modifier.height(28.dp))
@@ -163,19 +201,16 @@ object RegisterScreen : Screen {
                                 .height(52.dp)
                                 .clip(RoundedCornerShape(16.dp)),
                             onClick = {
-                                if (!uiState.isLoading &&
-                                    formState.displayName.isNotBlank() &&
-                                    formState.email.isNotBlank() &&
-                                    formState.password.isNotBlank()
+                                focusManager.clearFocus() // Dismissar teclado ao clicar no botão
+                                if (!uiState.isLoading && formState.displayName.isNotBlank() &&
+                                    formState.email.isNotBlank() && formState.password.isNotBlank()
                                 ) {
                                     viewModel.register()
                                     navigator.replaceAll(EmailVerificationScreen)
                                 }
                             },
-                            enabled = !uiState.isLoading &&
-                                    formState.displayName.isNotBlank() &&
-                                    formState.email.isNotBlank() &&
-                                    formState.password.isNotBlank(),
+                            enabled = !uiState.isLoading && formState.displayName.isNotBlank() &&
+                                    formState.email.isNotBlank() && formState.password.isNotBlank(),
                             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                         ) {
                             Box(
@@ -212,7 +247,10 @@ object RegisterScreen : Screen {
 
                         // Link para login
                         TextButton(
-                            onClick = { navigator.replaceAll(AuthScreen) },
+                            onClick = {
+                            focusManager.clearFocus()
+                                navigator.pop()
+                            },
                             colors = ButtonDefaults.textButtonColors(
                                 contentColor = MaterialTheme.colorScheme.primary
                             )
