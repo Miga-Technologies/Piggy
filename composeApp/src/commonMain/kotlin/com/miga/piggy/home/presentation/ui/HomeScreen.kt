@@ -81,10 +81,17 @@ object HomeScreen : Screen {
                 navigator.replaceAll(AuthScreen)
             }
         }
+        
+        LaunchedEffect(homeUiState.isLoading) {
+            isRefreshing = homeUiState.isLoading
+        }
 
         val pullRefreshState = rememberPullRefreshState(
             refreshing = isRefreshing,
-            onRefresh = { homeViewModel.refresh() }
+            onRefresh = {
+                isRefreshing = true
+                homeViewModel.refresh()
+            }
         )
 
         Box(
@@ -100,14 +107,7 @@ object HomeScreen : Screen {
                 )
         ) {
             PullRefreshLayout(
-                state = pullRefreshState,
-                indicator = {
-                    PullRefreshIndicator(
-                        state = pullRefreshState,
-                        backgroundColor = MaterialTheme.colorScheme.surface,
-                        contentColor = MaterialTheme.colorScheme.primary
-                    )
-                }
+                state = pullRefreshState
             ) {
                 Scaffold(
                     containerColor = Color.Transparent,
@@ -493,6 +493,14 @@ object HomeScreen : Screen {
                     }
                 )
             }
+
+            // Indicador de pull refresh posicionado no topo da tela
+            PullRefreshIndicator(
+                state = pullRefreshState,
+                backgroundColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
         }
 
         if (showMenuDialog) {
@@ -999,7 +1007,6 @@ private fun SimpleBarChart(
     }
 }
 
-// Função para mapear transações para ícones
 private fun getTransactionIcon(category: String, type: TransactionType) =
     if (type == TransactionType.INCOME) getIncomeIcon(category) else getExpenseIcon(category)
 
