@@ -1,6 +1,7 @@
 package com.miga.piggy.transaction.presentation.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -41,6 +42,8 @@ object ViewExpensesScreen : Screen {
 
         var filterDialogOpen by remember { mutableStateOf(false) }
         var selectedCategory by remember { mutableStateOf<String?>(null) }
+        var isSelectionMode by remember { mutableStateOf(false) }
+        var selectedTransactions by remember { mutableStateOf(setOf<String>()) }
 
         val availableCategories = remember(uiState.transactions) {
             uiState.transactions.map { it.category }.distinct().sorted()
@@ -79,7 +82,11 @@ object ViewExpensesScreen : Screen {
                         TopAppBar(
                             title = {
                                 Text(
-                                    "Gastos",
+                                    text = if (isSelectionMode) {
+                                        "${selectedTransactions.size} selecionada${if (selectedTransactions.size != 1) "s" else ""}"
+                                    } else {
+                                        "Gastos"
+                                    },
                                     style = MaterialTheme.typography.headlineMedium,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -94,12 +101,59 @@ object ViewExpensesScreen : Screen {
                                 }
                             },
                             actions = {
-                                IconButton(onClick = { filterDialogOpen = true }) {
-                                    Icon(
-                                        Icons.Rounded.FilterList,
-                                        "Filtros",
-                                        tint = MaterialTheme.colorScheme.onSurface
-                                    )
+                                if (isSelectionMode) {
+                                    if (selectedTransactions.isNotEmpty()) {
+                                        IconButton(
+                                            onClick = {
+                                                authState.user?.id?.let { userId ->
+                                                    selectedTransactions.forEach { transactionId ->
+                                                        viewModel.deleteTransaction(
+                                                            userId,
+                                                            transactionId,
+                                                            TransactionType.EXPENSE
+                                                        )
+                                                    }
+                                                }
+                                                selectedTransactions = emptySet()
+                                                isSelectionMode = false
+                                            }
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.Delete,
+                                                "Deletar selecionados",
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            isSelectionMode = false
+                                            selectedTransactions = emptySet()
+                                        }
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.Close,
+                                            "Cancelar seleção",
+                                            tint = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                } else {
+                                    if (uiState.transactions.isNotEmpty()) {
+                                        IconButton(onClick = { isSelectionMode = true }) {
+                                            Icon(
+                                                Icons.Rounded.Checklist,
+                                                "Modo seleção",
+                                                tint = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                    }
+                                    IconButton(onClick = { filterDialogOpen = true }) {
+                                        Icon(
+                                            Icons.Rounded.FilterList,
+                                            "Filtros",
+                                            tint = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
                                 }
                             },
                             colors = TopAppBarDefaults.topAppBarColors(
@@ -209,7 +263,7 @@ object ViewExpensesScreen : Screen {
                                     )
                                     Spacer(modifier = Modifier.height(16.dp))
                                     Text(
-                                        if (selectedCategory != null)
+                                        text = if (selectedCategory != null)
                                             "Nenhum gasto encontrado\npara esta categoria"
                                         else "Nenhum gasto encontrado",
                                         style = MaterialTheme.typography.bodyLarge,
@@ -231,6 +285,19 @@ object ViewExpensesScreen : Screen {
                                             TransactionType.EXPENSE
                                         )
                                     }
+                                },
+                                isSelectionMode = isSelectionMode,
+                                isSelected = selectedTransactions.contains(transaction.id),
+                                onTransactionSelect = { isSelected ->
+                                    if (isSelected) {
+                                        selectedTransactions = selectedTransactions + transaction.id
+                                    } else {
+                                        selectedTransactions = selectedTransactions - transaction.id
+                                    }
+                                },
+                                onEnterSelectionMode = {
+                                    isSelectionMode = true
+                                    selectedTransactions = setOf(transaction.id)
                                 }
                             )
                         }
@@ -391,12 +458,25 @@ private fun FilterDialog(
 @Composable
 private fun TransactionItemWithDelete(
     transaction: Transaction,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    isSelectionMode: Boolean,
+    isSelected: Boolean,
+    onTransactionSelect: (Boolean) -> Unit,
+    onEnterSelectionMode: () -> Unit
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = { },
+                onLongClick = {
+                    if (!isSelectionMode) {
+                        onEnterSelectionMode()
+                    }
+                }
+            ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -456,16 +536,23 @@ private fun TransactionItemWithDelete(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Botão de deletar
-            IconButton(
-                onClick = { showDeleteDialog = true }
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Delete,
-                    contentDescription = "Deletar transação",
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(20.dp)
+            if (isSelectionMode) {
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = onTransactionSelect
                 )
+            } else {
+                // Botão de deletar
+                IconButton(
+                    onClick = { showDeleteDialog = true }
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Delete,
+                        contentDescription = "Deletar transação",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
     }
@@ -528,6 +615,5 @@ private fun getTransactionIcon(category: String) = when (category.lowercase()) {
     "alimentação" -> Icons.Rounded.Restaurant
     "transporte" -> Icons.Rounded.DirectionsCar
     "salário" -> Icons.Rounded.AttachMoney
-    "freelance" -> Icons.Rounded.Work
     else -> Icons.Rounded.ShoppingCart
 }

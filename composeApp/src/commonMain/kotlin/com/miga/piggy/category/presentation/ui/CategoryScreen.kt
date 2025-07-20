@@ -1,6 +1,7 @@
 package com.miga.piggy.category.presentation.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,8 +16,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,6 +40,9 @@ object CategoryScreen : Screen {
         val viewModel: CategoryViewModel = koinInject()
         val uiState by viewModel.uiState.collectAsState()
         val formState by viewModel.formState.collectAsState()
+
+        var isSelectionMode by remember { mutableStateOf(false) }
+        var selectedCategories by remember { mutableStateOf(setOf<String>()) }
 
         // Background com gradiente sutil
         Box(
@@ -75,7 +81,11 @@ object CategoryScreen : Screen {
                                     )
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Text(
-                                        "Categorias",
+                                        text = if (isSelectionMode) {
+                                            "${selectedCategories.size} selecionada${if (selectedCategories.size != 1) "s" else ""}"
+                                        } else {
+                                            "Categorias"
+                                        },
                                         style = MaterialTheme.typography.headlineMedium,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -88,6 +98,81 @@ object CategoryScreen : Screen {
                                         contentDescription = "Voltar",
                                         tint = MaterialTheme.colorScheme.onSurface
                                     )
+                                }
+                            },
+                            actions = {
+                                if (isSelectionMode) {
+                                    // Botão de selecionar todos
+                                    val customCategories =
+                                        uiState.categories.filter { !it.isDefault }
+                                    val allSelected =
+                                        customCategories.all { selectedCategories.contains(it.id) }
+
+                                    IconButton(
+                                        onClick = {
+                                            selectedCategories = if (allSelected) {
+                                                emptySet()
+                                            } else {
+                                                customCategories.map { it.id }.toSet()
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            if (allSelected) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
+                                            contentDescription = if (allSelected) "Desselecionar todos" else "Selecionar todos",
+                                            tint = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+
+                                    // Botão de deletar selecionados
+                                    if (selectedCategories.isNotEmpty()) {
+                                        IconButton(
+                                            onClick = {
+                                                selectedCategories.forEach { categoryId ->
+                                                    val category =
+                                                        uiState.categories.find { it.id == categoryId }
+                                                    category?.let { viewModel.deleteCategory(it) }
+                                                }
+                                                selectedCategories = emptySet()
+                                                isSelectionMode = false
+                                            }
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.Delete,
+                                                contentDescription = "Deletar selecionados",
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+
+                                    // Botão de cancelar seleção
+                                    IconButton(
+                                        onClick = {
+                                            isSelectionMode = false
+                                            selectedCategories = emptySet()
+                                        }
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.Close,
+                                            contentDescription = "Cancelar seleção",
+                                            tint = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                } else {
+                                    // Botão para entrar no modo seleção
+                                    val customCategories =
+                                        uiState.categories.filter { !it.isDefault }
+                                    if (customCategories.isNotEmpty()) {
+                                        IconButton(
+                                            onClick = { isSelectionMode = true }
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.Checklist,
+                                                contentDescription = "Modo seleção",
+                                                tint = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                    }
                                 }
                             },
                             colors = TopAppBarDefaults.topAppBarColors(
@@ -144,90 +229,138 @@ object CategoryScreen : Screen {
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        if (uiState.categories.isEmpty()) {
+                        // Seção de categorias padrão - sempre mostrar
+                        item {
+                            Text(
+                                text = "Categorias Padrão",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+
+                        val defaultCategories = uiState.categories.filter { it.isDefault }
+                        if (defaultCategories.isNotEmpty()) {
+                            val rows = defaultCategories.chunked(3)
+                            items(rows) { rowCategories ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    // Use weight for proper grid layout; add empty spacers for missing items
+                                    for (i in 0 until 3) {
+                                        if (i < rowCategories.size) {
+                                            DefaultCategoryItem(
+                                                category = rowCategories[i],
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                        } else {
+                                            Spacer(modifier = Modifier.weight(1f))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Seção de categorias personalizadas
+                        val customCategories = uiState.categories.filter { !it.isDefault }
+                        item {
+                            Text(
+                                text = "Suas Categorias",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+
+                        if (customCategories.isNotEmpty()) {
+                            val rows = customCategories.chunked(3)
+                            items(rows) { rowCategories ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    rowCategories.forEach { category ->
+                                        CustomCategoryItem(
+                                            category = category,
+                                            onEdit = { viewModel.showEditDialog(category) },
+                                            onDelete = { viewModel.deleteCategory(category) },
+                                            modifier = Modifier.weight(1f),
+                                            isSelected = selectedCategories.contains(category.id),
+                                            onSelect = {
+                                                if (isSelectionMode) {
+                                                    if (selectedCategories.contains(category.id)) {
+                                                        selectedCategories =
+                                                            selectedCategories.minus(category.id)
+                                                    } else {
+                                                        selectedCategories =
+                                                            selectedCategories.plus(category.id)
+                                                    }
+                                                }
+                                            },
+                                            isSelectionMode = isSelectionMode,
+                                            onEnterSelectionMode = {
+                                                isSelectionMode = true
+                                                selectedCategories = setOf(category.id)
+                                            }
+                                        )
+                                    }
+                                    // Fill empty spaces
+                                    repeat(3 - rowCategories.size) {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
+                                }
+                            }
+                        } else {
+                            // Placeholder quando não há categorias personalizadas
                             item {
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(20.dp),
+                                    shape = RoundedCornerShape(16.dp),
                                     colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surface
+                                        containerColor = MaterialTheme.colorScheme.surface.copy(
+                                            alpha = 0.5f
+                                        )
                                     )
                                 ) {
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(40.dp),
+                                            .padding(24.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
                                         Icon(
-                                            Icons.Rounded.Category,
+                                            Icons.Rounded.Add,
                                             contentDescription = null,
-                                            modifier = Modifier.size(48.dp),
+                                            modifier = Modifier.size(32.dp),
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
                                                 alpha = 0.6f
                                             )
                                         )
-                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Spacer(modifier = Modifier.height(8.dp))
                                         Text(
-                                            text = "Nenhuma categoria ainda",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            text = "Nenhuma categoria personalizada",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                alpha = 0.8f
+                                            ),
                                             textAlign = TextAlign.Center
                                         )
                                         Text(
                                             text = "Toque no + para criar sua primeira categoria",
-                                            style = MaterialTheme.typography.bodyMedium,
+                                            style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                                alpha = 0.7f
+                                                alpha = 0.6f
                                             ),
                                             textAlign = TextAlign.Center
                                         )
                                     }
-                                }
-                            }
-                        } else {
-                            // Seção de categorias padrão
-                            item {
-                                Text(
-                                    text = "Categorias Padrão",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    modifier = Modifier.padding(vertical = 8.dp)
-                                )
-                            }
-
-                            val defaultCategories = uiState.categories.filter { it.isDefault }
-                            items(defaultCategories) { category ->
-                                CategoryItem(
-                                    category = category,
-                                    onEdit = { },
-                                    onDelete = { },
-                                    isDefault = true
-                                )
-                            }
-
-                            // Seção de categorias personalizadas
-                            val customCategories = uiState.categories.filter { !it.isDefault }
-                            if (customCategories.isNotEmpty()) {
-                                item {
-                                    Text(
-                                        text = "Suas Categorias",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                        modifier = Modifier.padding(vertical = 8.dp)
-                                    )
-                                }
-
-                                items(customCategories) { category ->
-                                    CategoryItem(
-                                        category = category,
-                                        onEdit = { viewModel.showEditDialog(category) },
-                                        onDelete = { viewModel.deleteCategory(category) },
-                                        isDefault = false
-                                    )
                                 }
                             }
                         }
@@ -289,87 +422,164 @@ object CategoryScreen : Screen {
 }
 
 @Composable
-private fun CategoryItem(
+private fun DefaultCategoryItem(
     category: Category,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    isDefault: Boolean
+    modifier: Modifier
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        modifier = modifier
+            .aspectRatio(1f)
+            .padding(4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxSize()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            // Ícone da categoria com fundo colorido
+            Text(
+                text = category.name,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                maxLines = 2
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Padrão",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+private fun CustomCategoryItem(
+    category: Category,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier,
+    isSelected: Boolean,
+    onSelect: () -> Unit,
+    isSelectionMode: Boolean,
+    onEnterSelectionMode: () -> Unit
+) {
+    var showMenu by remember { mutableStateOf(false) }
+
+    val color = try {
+        ColorParser.parseHexColor(category.color)
+    } catch (e: Exception) {
+        MaterialTheme.colorScheme.primary
+    }
+    Box(
+        modifier = modifier
+    ) {
+        Card(
+            modifier = Modifier
+                .aspectRatio(1f)
+                .padding(4.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.Transparent
+            )
+        ) {
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .fillMaxSize()
                     .background(
-                        ColorParser.parseHexColor(category.color).copy(alpha = 0.1f),
-                        CircleShape
-                    ),
-                contentAlignment = Alignment.Center
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                color,
+                                color.copy(alpha = 0.7f)
+                            )
+                        )
+                    )
             ) {
-                Box(
+                Column(
                     modifier = Modifier
-                        .size(32.dp)
-                        .background(
-                            ColorParser.parseHexColor(category.color),
-                            CircleShape
-                        )
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = category.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
+                        .fillMaxSize()
+                        .padding(12.dp)
+                        .combinedClickable(
+                            onClick = {
+                                if (isSelectionMode) {
+                                    onSelect()
+                                } else {
+                                    showMenu = true
+                                }
+                            },
+                            onLongClick = {
+                                if (!isSelectionMode) {
+                                    onEnterSelectionMode()
+                                } else {
+                                    onSelect()
+                                }
+                            }
+                        ),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    if (isDefault) {
-                        Icon(
-                            Icons.Rounded.Star,
-                            contentDescription = "Padrão",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "Categoria Padrão",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium
-                        )
-                    } else {
-                        Text(
-                            text = "Categoria Personalizada",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        text = category.name,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Personalizada",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
+        }
 
-            if (!isDefault) {
-                Row {
-                    IconButton(
-                        onClick = onEdit,
-                        modifier = Modifier.size(40.dp)
+        if (isSelected) {
+            Card(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(4.dp)
+                    .size(24.dp),
+                shape = CircleShape,
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Icon(
+                    Icons.Rounded.Check,
+                    contentDescription = "Selecionado",
+                    tint = Color.White,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(4.dp)
+                )
+            }
+        }
+
+        // Menu dropdown
+        DropdownMenu(
+            expanded = showMenu,
+            onDismissRequest = { showMenu = false }
+        ) {
+            DropdownMenuItem(
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             Icons.Rounded.Edit,
@@ -377,11 +587,19 @@ private fun CategoryItem(
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Editar")
                     }
-
-                    IconButton(
-                        onClick = onDelete,
-                        modifier = Modifier.size(40.dp)
+                },
+                onClick = {
+                    showMenu = false
+                    onEdit()
+                }
+            )
+            DropdownMenuItem(
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             Icons.Rounded.Delete,
@@ -389,9 +607,15 @@ private fun CategoryItem(
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(20.dp)
                         )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Deletar")
                     }
+                },
+                onClick = {
+                    showMenu = false
+                    onDelete()
                 }
-            }
+            )
         }
     }
 }

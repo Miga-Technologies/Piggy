@@ -90,7 +90,7 @@ val appModule = module {
     factory { GetFinancialSummaryUseCase(get(), get()) }
 
     factory { AuthViewModel(get(), get(), get(), get(), get(), get(), get()) }
-    viewModelOf(::HomeViewModel)
+    factory { HomeViewModel(get(), get(), get()) }
     viewModelOf(::EditBalanceViewModel)
     viewModelOf(::AddTransactionViewModel)
     viewModelOf(::CategoryViewModel)

@@ -53,13 +53,6 @@ object DefaultCategories {
             type = TransactionType.INCOME,
             color = "#66BB6A",
             isDefault = true
-        ),
-        Category(
-            id = "default_freelance",
-            name = "Freelance",
-            type = TransactionType.INCOME,
-            color = "#26A69A",
-            isDefault = true
         )
     )
 

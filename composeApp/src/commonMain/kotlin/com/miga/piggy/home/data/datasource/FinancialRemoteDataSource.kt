@@ -122,11 +122,16 @@ class FinancialRemoteDataSourceImpl(
 
     override suspend fun getCategories(): List<CategoryDto> {
         return try {
-            val snapshot = firestore.collection(CATEGORIES_COLLECTION)
+            val firestoreCategories = firestore.collection(CATEGORIES_COLLECTION)
                 .get()
+                .documents
+                .map { it.data<CategoryDto>() }
+                .filter { !it.isDefault } // Filtrar apenas categorias personalizadas do Firestore
 
-            snapshot.documents.map { it.data<CategoryDto>() }
+            // Sempre retornar categorias padrão + categorias personalizadas
+            getDefaultCategories() + firestoreCategories
         } catch (_: Exception) {
+            // Em caso de erro, retornar apenas as categorias padrão
             getDefaultCategories()
         }
     }
@@ -183,7 +188,6 @@ class FinancialRemoteDataSourceImpl(
 
             // Categorias de receita
             CategoryDto("salario", "Salário", "INCOME", "#4CAF50", true),
-            CategoryDto("freelance", "Freelance", "INCOME", "#03DAC6", true),
             CategoryDto("investimentos", "Investimentos", "INCOME", "#9C27B0", true),
             CategoryDto("outros_receitas", "Outras Receitas", "INCOME", "#FF9800", true)
         )

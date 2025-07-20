@@ -1,6 +1,7 @@
 package com.miga.piggy.transaction.presentation.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -42,6 +43,10 @@ object ViewIncomeScreen : Screen {
         var filterDialogOpen by remember { mutableStateOf(false) }
         var selectedCategory by remember { mutableStateOf<String?>(null) }
 
+        // Selection mode - multiple selection of transactions
+        var selectionMode by remember { mutableStateOf(false) }
+        var selectedTransactions by remember { mutableStateOf(setOf<String>()) }
+
         val availableCategories = remember(uiState.transactions) {
             uiState.transactions.map { it.category }.distinct().sorted()
         }
@@ -77,28 +82,82 @@ object ViewIncomeScreen : Screen {
                     ) {
                         TopAppBar(
                             title = {
-                                Text(
-                                    "Receitas",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            },
-                            navigationIcon = {
-                                IconButton(onClick = { navigator.pop() }) {
-                                    Icon(
-                                        Icons.AutoMirrored.Rounded.ArrowBack,
-                                        "Voltar",
-                                        tint = MaterialTheme.colorScheme.onSurface
+                                if (selectionMode) {
+                                    Text(
+                                        "${selectedTransactions.size} selecionada${if (selectedTransactions.size == 1) "" else "s"}",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    Text(
+                                        "Receitas",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                             },
+                            navigationIcon = {
+                                if (selectionMode) {
+                                    IconButton(onClick = {
+                                        selectionMode = false
+                                        selectedTransactions = emptySet()
+                                    }) {
+                                        Icon(
+                                            Icons.Rounded.Close,
+                                            "Sair da seleção",
+                                            tint = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                } else {
+                                    IconButton(onClick = { navigator.pop() }) {
+                                        Icon(
+                                            Icons.AutoMirrored.Rounded.ArrowBack,
+                                            "Voltar",
+                                            tint = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+                            },
                             actions = {
-                                IconButton(onClick = { filterDialogOpen = true }) {
-                                    Icon(
-                                        Icons.Rounded.FilterList,
-                                        "Filtros",
-                                        tint = MaterialTheme.colorScheme.onSurface
-                                    )
+                                if (selectionMode) {
+                                    if (selectedTransactions.isNotEmpty()) {
+                                        IconButton(onClick = {
+                                            authState.user?.id?.let { userId ->
+                                                selectedTransactions.forEach { transactionId ->
+                                                    viewModel.deleteTransaction(
+                                                        userId,
+                                                        transactionId,
+                                                        TransactionType.INCOME
+                                                    )
+                                                }
+                                            }
+                                            selectionMode = false
+                                            selectedTransactions = emptySet()
+                                        }) {
+                                            Icon(
+                                                Icons.Rounded.Delete,
+                                                "Deletar selecionadas",
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    if (uiState.transactions.isNotEmpty()) {
+                                        IconButton(onClick = { selectionMode = true }) {
+                                            Icon(
+                                                Icons.Rounded.Checklist,
+                                                "Modo seleção",
+                                                tint = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                    }
+                                    IconButton(onClick = { filterDialogOpen = true }) {
+                                        Icon(
+                                            Icons.Rounded.FilterList,
+                                            "Filtros",
+                                            tint = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
                                 }
                             },
                             colors = TopAppBarDefaults.topAppBarColors(
@@ -218,8 +277,28 @@ object ViewIncomeScreen : Screen {
                         }
                     } else {
                         items(filteredTransactions) { transaction ->
-                            TransactionItemWithDelete(
+                            TransactionItemSelectable(
                                 transaction = transaction,
+                                selectionMode = selectionMode,
+                                isSelected = selectedTransactions.contains(transaction.id),
+                                onLongPress = {
+                                    selectionMode = true
+                                    selectedTransactions = selectedTransactions + transaction.id
+                                },
+                                onClick = {
+                                    if (selectionMode) {
+                                        selectedTransactions =
+                                            if (selectedTransactions.contains(transaction.id)) {
+                                                selectedTransactions - transaction.id
+                                            } else {
+                                                selectedTransactions + transaction.id
+                                            }
+                                        // Exit selection mode if none left selected
+                                        if (selectedTransactions.isEmpty()) {
+                                            selectionMode = false
+                                        }
+                                    }
+                                },
                                 onDelete = {
                                     authState.user?.id?.let { userId ->
                                         viewModel.deleteTransaction(
@@ -228,7 +307,8 @@ object ViewIncomeScreen : Screen {
                                             TransactionType.INCOME
                                         )
                                     }
-                                }
+                                },
+                                showDelete = !selectionMode // Only show "delete" for single if not in selection mode
                             )
                         }
                     }
@@ -385,16 +465,34 @@ private fun FilterDialog(
 }
 
 @Composable
-private fun TransactionItemWithDelete(
+private fun TransactionItemSelectable(
     transaction: Transaction,
-    onDelete: () -> Unit
+    selectionMode: Boolean,
+    isSelected: Boolean,
+    onLongPress: () -> Unit,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+    showDelete: Boolean = true
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = {
+                    onClick()
+                },
+                onLongClick = {
+                    onLongPress()
+                }
+            ),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor =
+                if (selectionMode && isSelected)
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                else
+                    MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(16.dp)
@@ -415,12 +513,24 @@ private fun TransactionItemWithDelete(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = getIncomeIcon(transaction.category),
-                    contentDescription = transaction.category,
-                    tint = PiggyColors.Green500,
-                    modifier = Modifier.size(20.dp)
-                )
+                if (selectionMode) {
+                    // Show checkbox for selection instead of plain icon
+                    Checkbox(
+                        checked = isSelected,
+                        onCheckedChange = { _ -> onClick() },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = MaterialTheme.colorScheme.primary,
+                            uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                } else {
+                    Icon(
+                        imageVector = getIncomeIcon(transaction.category),
+                        contentDescription = transaction.category,
+                        tint = PiggyColors.Green500,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -452,16 +562,18 @@ private fun TransactionItemWithDelete(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Botão de deletar
-            IconButton(
-                onClick = { showDeleteDialog = true }
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Delete,
-                    contentDescription = "Deletar transação",
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(20.dp)
-                )
+            // Botão de deletar visível apenas quando NÃO está em modo seleção
+            if (showDelete && !selectionMode) {
+                IconButton(
+                    onClick = { showDeleteDialog = true }
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Delete,
+                        contentDescription = "Deletar transação",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
     }
@@ -518,7 +630,6 @@ private fun TransactionItemWithDelete(
 // Função para mapear categorias de receita para ícones
 private fun getIncomeIcon(category: String) = when (category.lowercase()) {
     "salário" -> Icons.Rounded.AttachMoney
-    "freelance" -> Icons.Rounded.Work
     "investimento" -> Icons.Rounded.TrendingUp
     "vendas" -> Icons.Rounded.Sell
     "bonus" -> Icons.Rounded.EmojiEvents

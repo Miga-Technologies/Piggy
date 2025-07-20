@@ -528,7 +528,6 @@ private fun getExpenseIcon(category: String) = when (category.lowercase()) {
 
 private fun getIncomeIcon(category: String) = when (category.lowercase()) {
     "salário" -> Icons.Rounded.AttachMoney
-    "freelance" -> Icons.Rounded.Work
     "investimento" -> Icons.Rounded.TrendingUp
     "vendas" -> Icons.Rounded.Sell
     "bonus" -> Icons.Rounded.EmojiEvents
