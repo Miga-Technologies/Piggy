@@ -11,4 +11,5 @@ interface AuthRepository {
     suspend fun resetPassword(email: String): AuthResult<Unit>
     suspend fun sendEmailVerification(): Boolean
     suspend fun isEmailVerified(): Boolean
+    suspend fun updateUserProfile(displayName: String?, photoUrl: String?): AuthResult<Unit>
 }

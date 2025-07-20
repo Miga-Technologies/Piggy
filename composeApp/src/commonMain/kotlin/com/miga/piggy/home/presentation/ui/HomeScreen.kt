@@ -2,61 +2,28 @@ package com.miga.piggy.home.presentation.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.List
-import androidx.compose.material.icons.rounded.AccountBalanceWallet
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.BarChart
-import androidx.compose.material.icons.rounded.Category
-import androidx.compose.material.icons.rounded.Receipt
-import androidx.compose.material.icons.rounded.Remove
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.surfaceColorAtElevation
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Switch
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.automirrored.rounded.TrendingDown
+import androidx.compose.material.icons.automirrored.rounded.TrendingUp
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
@@ -71,15 +38,22 @@ import com.miga.piggy.home.presentation.viewmodel.HomeViewModel
 import com.miga.piggy.reports.presentation.ui.ReportsScreen
 import com.miga.piggy.transaction.presentation.ui.AddExpenseScreen
 import com.miga.piggy.transaction.presentation.ui.AddIncomeScreen
+import com.miga.piggy.transaction.presentation.ui.QuickExpenseScreen
 import com.miga.piggy.transaction.presentation.ui.ViewExpensesScreen
 import com.miga.piggy.transaction.presentation.ui.ViewIncomeScreen
 import com.miga.piggy.utils.formatters.formatDouble
 import com.miga.piggy.utils.parsers.ColorParser
+import com.miga.piggy.utils.theme.*
 import com.miga.piggy.ThemeManager
+import com.miga.piggy.transaction.domain.entity.TransactionType
 import dev.materii.pullrefresh.PullRefreshIndicator
 import dev.materii.pullrefresh.PullRefreshLayout
 import dev.materii.pullrefresh.rememberPullRefreshState
 import org.koin.compose.koinInject
+import com.miga.piggy.utils.formatters.formatDate
+import com.miga.piggy.utils.ui.ProfileImagePicker
+import com.miga.piggy.utils.ImagePickerWithPermissions
+import com.miga.piggy.utils.ui.ImageSelectionDialog
 
 object HomeScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -93,8 +67,8 @@ object HomeScreen : Screen {
 
         var isRefreshing by remember { mutableStateOf(false) }
         var showMenuDialog by remember { mutableStateOf(false) }
-        val isDarkTheme by ThemeManager.isDarkTheme
         val currentTheme = ThemeManager.getCurrentTheme()
+        var showImagePicker by remember { mutableStateOf(false) }
 
         LaunchedEffect(authUiState.user) {
             if (authUiState.user == null) {
@@ -107,176 +81,624 @@ object HomeScreen : Screen {
             onRefresh = { homeViewModel.refresh() }
         )
 
-        PullRefreshLayout(
-            state = pullRefreshState,
-            indicator = {
-                PullRefreshIndicator(
-                    state = pullRefreshState,
-                    backgroundColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-                    contentColor = MaterialTheme.colorScheme.primary
-                )
-            }
-        ) {
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = {
-                            Text(
-                                "Olá, ${
-                                    authUiState.user?.displayName?.split(" ")?.first() ?: "Usuário"
-                                }!"
-                            )
-                        },
-                        actions = {
-                            IconButton(
-                                onClick = {
-                                    showMenuDialog = true
-                                }
-                            ) {
-                                Icon(
-                                    Icons.Rounded.MoreVert,
-                                    contentDescription = "Menu"
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                            actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.background,
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
                         )
                     )
-                },
-                content = { paddingValues ->
-                    if (homeUiState.isLoading) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
+                )
+        ) {
+            PullRefreshLayout(
+                state = pullRefreshState,
+                indicator = {
+                    PullRefreshIndicator(
+                        state = pullRefreshState,
+                        backgroundColor = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.primary
+                    )
+                }
+            ) {
+                Scaffold(
+                    containerColor = Color.Transparent,
+                    topBar = {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                         ) {
-                            CircularProgressIndicator()
-                        }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(paddingValues),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            // Card do Saldo
-                            item {
-                                BalanceCard(
-                                    balance = homeUiState.balance,
-                                    onBalanceClick = {
-                                        navigator.push(EditBalanceScreen)
+                            Column(
+                                modifier = Modifier.padding(24.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = "Olá,",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = authUiState.user?.displayName?.split(" ")
+                                                ?.first() ?: "Usuário",
+                                            style = MaterialTheme.typography.headlineMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
                                     }
+
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        ProfileImagePicker(
+                                            name = authUiState.user?.displayName ?: "Usuário",
+                                            imageUrl = authUiState.user?.photoUrl,
+                                            onImageClick = { showImagePicker = true }
+                                        )
+
+                                        IconButton(
+                                            onClick = { showMenuDialog = true }
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.MoreVert,
+                                                contentDescription = "Menu",
+                                                tint = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(24.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    GradientValueCard(
+                                        title = "Receitas",
+                                        value = "R$ ${formatDouble(homeUiState.monthlyIncome)}",
+                                        gradient = PiggyGradients.IncomeGradient,
+                                        icon = Icons.AutoMirrored.Rounded.TrendingUp,
+                                        modifier = Modifier.weight(1f)
+                                    )
+
+                                    GradientValueCard(
+                                        title = "Gastos",
+                                        value = "R$ ${formatDouble(homeUiState.monthlyExpenses)}",
+                                        gradient = PiggyGradients.ExpenseGradient,
+                                        icon = Icons.AutoMirrored.Rounded.TrendingDown,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
+                        }
+                    },
+                    content = { paddingValues ->
+                        if (homeUiState.isLoading) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(paddingValues),
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(20.dp)
+                            ) {
+                                item {
+                                    CreditCardCard(
+                                        holderName = authUiState.user?.displayName ?: "Usuário",
+                                        cardNumber = "•••• •••• •••• 1234",
+                                        balance = "R$ ${formatDouble(homeUiState.balance)}",
+                                        modifier = Modifier.clickable {
+                                            navigator.push(
+                                                EditBalanceScreen
+                                            )
+                                        }
+                                    )
+                                }
 
-                            // Menu de Ações
-                            item {
-                                Text(
-                                    text = "O que você quer fazer?",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    modifier = Modifier.padding(vertical = 8.dp)
-                                )
-                            }
-
-                            item {
-                                MenuGrid(navigator)
-                            }
-
-                            // Gráfico de Gastos
-                            if (homeUiState.expensesByCategory.isNotEmpty()) {
+                                // Botões principais de adicionar
                                 item {
                                     Text(
-                                        text = "Gastos por categoria",
+                                        text = "Adicionar Transação",
                                         style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onBackground,
                                         modifier = Modifier.padding(vertical = 8.dp)
                                     )
                                 }
 
                                 item {
-                                    ExpenseChartCard(homeUiState.expensesByCategory)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        // Botão Adicionar Gasto
+                                        Card(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(100.dp)
+                                                .clip(RoundedCornerShape(20.dp)),
+                                            onClick = { navigator.push(AddExpenseScreen) },
+                                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .background(PiggyGradients.ExpenseGradient),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Column(
+                                                    horizontalAlignment = Alignment.CenterHorizontally
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.Remove,
+                                                        contentDescription = "Adicionar Gasto",
+                                                        tint = Color.White,
+                                                        modifier = Modifier.size(28.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.height(8.dp))
+                                                    Text(
+                                                        text = "Adicionar",
+                                                        color = Color.White,
+                                                        style = MaterialTheme.typography.titleSmall,
+                                                        fontWeight = FontWeight.SemiBold
+                                                    )
+                                                    Text(
+                                                        text = "Gasto",
+                                                        color = Color.White,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontWeight = FontWeight.Medium
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        // Botão Adicionar Receita
+                                        Card(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(100.dp)
+                                                .clip(RoundedCornerShape(20.dp)),
+                                            onClick = { navigator.push(AddIncomeScreen) },
+                                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .background(PiggyGradients.IncomeGradient),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Column(
+                                                    horizontalAlignment = Alignment.CenterHorizontally
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.Add,
+                                                        contentDescription = "Adicionar Receita",
+                                                        tint = Color.White,
+                                                        modifier = Modifier.size(28.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.height(8.dp))
+                                                    Text(
+                                                        text = "Adicionar",
+                                                        color = Color.White,
+                                                        style = MaterialTheme.typography.titleSmall,
+                                                        fontWeight = FontWeight.SemiBold
+                                                    )
+                                                    Text(
+                                                        text = "Receita",
+                                                        color = Color.White,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontWeight = FontWeight.Medium
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Botão Adicionar Categoria
+                                item {
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(80.dp)
+                                            .clip(RoundedCornerShape(16.dp)),
+                                        onClick = { navigator.push(CategoryScreen) },
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                                        ),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(16.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Category,
+                                                contentDescription = "Adicionar Categoria",
+                                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Text(
+                                                text = "Adicionar Categoria",
+                                                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Seção de Ações Rápidas
+                                item {
+                                    Text(
+                                        text = "Ações Rápidas",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onBackground,
+                                        modifier = Modifier.padding(vertical = 8.dp)
+                                    )
+                                }
+
+                                item {
+                                    QuickActionsGrid(navigator)
+                                }
+
+                                // Lista de transações mais recentes
+                                if (homeUiState.recentTransactions.isNotEmpty()) {
+                                    item {
+                                        Text(
+                                            text = "Transações Recentes",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onBackground,
+                                            modifier = Modifier.padding(vertical = 8.dp)
+                                        )
+                                    }
+
+                                    item {
+                                        Column(
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            homeUiState.recentTransactions.take(5)
+                                                .forEach { transaction ->
+                                                    TransactionItem(
+                                                        title = transaction.category,
+                                                        subtitle = "${transaction.description} • ${
+                                                            formatDate(
+                                                                transaction.date
+                                                            )
+                                                        }",
+                                                        amount = if (transaction.type == TransactionType.INCOME)
+                                                            "+R$ ${formatDouble(transaction.amount)}"
+                                                        else
+                                                            "-R$ ${formatDouble(transaction.amount)}",
+                                                        icon = getTransactionIcon(
+                                                            transaction.category,
+                                                            transaction.type
+                                                        ),
+                                                        iconBackgroundColor = if (transaction.type == TransactionType.INCOME)
+                                                            PiggyColors.Green500 else PiggyColors.Red500
+                                                    )
+                                                }
+                                        }
+                                    }
+                                } else {
+                                    // Mostrar placeholder quando não há transações
+                                    item {
+                                        Card(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(16.dp),
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = MaterialTheme.colorScheme.surface
+                                            )
+                                        ) {
+                                            Column(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(24.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                Icon(
+                                                    Icons.Rounded.Receipt,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(48.dp),
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                        alpha = 0.6f
+                                                    )
+                                                )
+                                                Spacer(modifier = Modifier.height(12.dp))
+                                                Text(
+                                                    text = "Nenhuma transação ainda",
+                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                                Text(
+                                                    text = "Comece adicionando seus gastos e receitas",
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                        alpha = 0.7f
+                                                    ),
+                                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (homeUiState.expensesByCategory.isNotEmpty()) {
+                                    item {
+                                        Text(
+                                            text = "Gastos por Categoria",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onBackground,
+                                            modifier = Modifier.padding(vertical = 8.dp)
+                                        )
+                                    }
+
+                                    item {
+                                        ExpenseChartCard(homeUiState.expensesByCategory)
+                                    }
                                 }
                             }
+                        }
 
-                            item {
-                                FinancialSummary(
-                                    totalIncome = homeUiState.monthlyIncome,
-                                    totalExpenses = homeUiState.monthlyExpenses
-                                )
+                        homeUiState.error?.let { error ->
+                            LaunchedEffect(error) {
+                                kotlinx.coroutines.delay(3000)
+                                homeViewModel.clearError()
                             }
                         }
                     }
-
-                    // Mostrar erro se houver
-                    homeUiState.error?.let { error ->
-                        LaunchedEffect(error) {
-                            // Aqui você pode mostrar um SnackBar
-                            kotlinx.coroutines.delay(3000)
-                            homeViewModel.clearError()
-                        }
-                    }
-                }
-            )
+                )
+            }
         }
 
         if (showMenuDialog) {
             AlertDialog(
                 onDismissRequest = { showMenuDialog = false },
-                title = { Text("Menu") },
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Rounded.Settings,
+                            contentDescription = "Configurações",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "Configurações",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                },
                 text = {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Theme toggle
-                        Row(
+                        // Card para informações do usuário
+                        Card(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("Tema escuro")
-                            Switch(
-                                checked = currentTheme,
-                                onCheckedChange = { ThemeManager.setDarkTheme(it) }
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                ProfileImagePicker(
+                                    name = authUiState.user?.displayName ?: "Usuário",
+                                    imageUrl = authUiState.user?.photoUrl,
+                                    onImageClick = { showImagePicker = true },
+                                    modifier = Modifier.size(40.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = authUiState.user?.displayName ?: "Usuário",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = authUiState.user?.email ?: "email@exemplo.com",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         }
 
-                        HorizontalDivider()
+                        // Card para o toggle de tema
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        if (currentTheme) Icons.Rounded.DarkMode else Icons.Rounded.LightMode,
+                                        contentDescription = "Tema",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Text(
+                                            "Tema escuro",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            if (currentTheme) "Ativo" else "Inativo",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                Switch(
+                                    checked = currentTheme,
+                                    onCheckedChange = { ThemeManager.setDarkTheme(it) },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                        checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
+                                    )
+                                )
+                            }
+                        }
 
-                        // App version
-                        Column {
-                            Text(
-                                text = "Versão do App",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "1.0.0",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium
-                            )
+                        // Card para informações do app
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Info,
+                                    contentDescription = "Informações",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "Piggy - Sua carteira inteligente",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Versão 1.0.0",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         }
                     }
                 },
                 confirmButton = {
-                    TextButton(
+                    Card(
                         onClick = {
                             authViewModel.logout()
                             navigator.replaceAll(AuthScreen)
-                        }
+                        },
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-                        Text("Logout")
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.Logout,
+                                contentDescription = "Logout",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                "Sair",
+                                color = Color.White,
+                                fontWeight = FontWeight.Medium,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
                     }
                 },
                 dismissButton = {
                     TextButton(
                         onClick = { showMenuDialog = false }
                     ) {
-                        Text("Fechar")
+                        Text(
+                            "Fechar",
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
-                }
+                },
+                shape = RoundedCornerShape(20.dp),
+                containerColor = MaterialTheme.colorScheme.surface
             )
+        }
+
+        if (showImagePicker) {
+            ImagePickerWithPermissions(
+                onImageSelected = { imageData ->
+                    imageData?.let { data ->
+                        authViewModel.updateProfileImage(data)
+                    }
+                    showImagePicker = false
+                },
+                onPermissionDenied = {
+                    // TODO: Mostrar mensagem de erro sobre permissão
+                    showImagePicker = false
+                }
+            ) { pickFromGallery, pickFromCamera ->
+                ImageSelectionDialog(
+                    onDismissRequest = { showImagePicker = false },
+                    onGalleryClick = {
+                        pickFromGallery()
+                    },
+                    onCameraClick = {
+                        pickFromCamera()
+                    }
+                )
+            }
         }
 
         LaunchedEffect(Unit) {
@@ -286,142 +708,148 @@ object HomeScreen : Screen {
 }
 
 @Composable
-private fun BalanceCard(
-    balance: Double,
-    onBalanceClick: () -> Unit = {}
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(120.dp)
-            .clickable { onBalanceClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Saldo atual",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Rounded.AccountBalanceWallet,
-                        contentDescription = "Saldo",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "Toque para editar",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                    )
-                }
-            }
-
-            Text(
-                text = "R$ ${formatDouble(balance)}",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-        }
-    }
-}
-
-@Composable
-private fun MenuGrid(navigator: Navigator) {
-    val menuItems = listOf(
-        MenuItem("Adicionar Gasto", Icons.Rounded.Remove) {
-            navigator.push(AddExpenseScreen)
-        },
-        MenuItem("Adicionar Receita", Icons.Rounded.Add) {
-            navigator.push(AddIncomeScreen)
-        },
-        MenuItem("Ver Gastos", Icons.AutoMirrored.Rounded.List) {
-            navigator.push(ViewExpensesScreen)
-        },
-        MenuItem("Ver Receitas", Icons.Rounded.Receipt) {
-            navigator.push(ViewIncomeScreen)
-        },
-        MenuItem("Relatórios", Icons.Rounded.BarChart) {
-            navigator.push(ReportsScreen)
-        },
-        MenuItem("Categorias", Icons.Rounded.Category) {
-            navigator.push(CategoryScreen)
-        }
+private fun QuickActionsGrid(navigator: Navigator) {
+    // Usar as categorias padrão dos utilitários
+    val quickActions = listOf(
+        Triple("Água", PiggyGradients.WaterGradient, "Água"),
+        Triple("Energia", PiggyGradients.PowerGradient, "Energia"),
+        Triple("Internet", PiggyGradients.WifiGradient, "Internet"),
+        Triple("Telefone", PiggyGradients.PhoneGradient, "Telefone")
     )
 
-    val rows = menuItems.chunked(2)
-
-    Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        rows.forEach { rowItems ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                rowItems.forEach { item ->
-                    Box(modifier = Modifier.weight(1f)) {
-                        MenuItemCard(item)
-                    }
-                }
-                if (rowItems.size < 2) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-            }
+        quickActions.forEach { (title, gradient, categoryName) ->
+            CategoryButton(
+                title = title,
+                icon = when (title) {
+                    "Água" -> Icons.Rounded.WaterDrop
+                    "Energia" -> Icons.Rounded.Lightbulb
+                    "Internet" -> Icons.Rounded.Wifi
+                    "Telefone" -> Icons.Rounded.Phone
+                    else -> Icons.Rounded.ShoppingCart
+                },
+                gradient = gradient,
+                onClick = {
+                    navigator.push(
+                        QuickExpenseScreen(
+                            categoryName = categoryName
+                        )
+                    )
+                },
+                modifier = Modifier.weight(1f)
+            )
         }
     }
-}
 
-@Composable
-private fun MenuItemCard(item: MenuItem) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(90.dp)
-            .clickable { item.onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp)
+    Spacer(modifier = Modifier.height(12.dp))
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(
+        Card(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .weight(1f)
+                .height(80.dp)
+                .clip(RoundedCornerShape(16.dp)),
+            onClick = { navigator.push(ViewExpensesScreen) },
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
-            Icon(
-                imageVector = item.icon,
-                contentDescription = item.title,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = item.title,
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.Center,
-                maxLines = 1
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.List,
+                    contentDescription = "Ver Gastos",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Ver Gastos",
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
+        Card(
+            modifier = Modifier
+                .weight(1f)
+                .height(80.dp)
+                .clip(RoundedCornerShape(16.dp)),
+            onClick = { navigator.push(ViewIncomeScreen) },
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Receipt,
+                    contentDescription = "Ver Receitas",
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Ver Receitas",
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
+        Card(
+            modifier = Modifier
+                .weight(1f)
+                .height(80.dp)
+                .clip(RoundedCornerShape(16.dp)),
+            onClick = { navigator.push(ReportsScreen) },
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.BarChart,
+                    contentDescription = "Relatórios",
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Relatórios",
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
     }
 }
@@ -429,20 +857,25 @@ private fun MenuItemCard(item: MenuItem) {
 @Composable
 private fun ExpenseChartCard(expensesByCategory: Map<String, Double>) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(20.dp)
         ) {
             if (expensesByCategory.isNotEmpty()) {
                 SimpleBarChart(expensesByCategory)
             } else {
                 Box(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -468,14 +901,12 @@ private fun SimpleBarChart(
     }
 
     val fallbackColors = listOf(
-        Color(0xFF6200EE), Color(0xFF03DAC6), Color(0xFFFF6200),
-        Color(0xFF4CAF50), Color(0xFFFF5722), Color(0xFF9C27B0),
-        Color(0xFF2196F3), Color(0xFFFF9800), Color(0xFF607D8B),
-        Color(0xFFE91E63)
+        PiggyColors.Purple500, PiggyColors.Pink500, PiggyColors.Blue500,
+        PiggyColors.Green500, PiggyColors.Orange500, PiggyColors.Red500
     )
 
-    val itemHeight = 28.dp
-    val spacing = 8.dp
+    val itemHeight = 32.dp
+    val spacing = 12.dp
     val totalHeight = (itemHeight * data.size) + (spacing * (data.size - 1).coerceAtLeast(0))
 
     Column(
@@ -494,18 +925,20 @@ private fun SimpleBarChart(
                 Text(
                     text = categoryName,
                     modifier = Modifier.width(80.dp),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .height(20.dp)
+                        .height(24.dp)
                         .background(
-                            Color.Gray.copy(alpha = 0.2f),
-                            RoundedCornerShape(10.dp)
+                            MaterialTheme.colorScheme.surfaceVariant,
+                            RoundedCornerShape(12.dp)
                         )
                 ) {
                     Box(
@@ -515,96 +948,43 @@ private fun SimpleBarChart(
                             .background(
                                 categoryColorMap[categoryName]
                                     ?: fallbackColors[index % fallbackColors.size],
-                                RoundedCornerShape(10.dp)
+                                RoundedCornerShape(12.dp)
                             )
                     )
                 }
 
                 Text(
                     text = "R$ ${formatDouble(value)}",
-                    modifier = Modifier.width(60.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.End
+                    modifier = Modifier.width(80.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.End,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
     }
 }
 
-@Composable
-private fun FinancialSummary(
-    totalIncome: Double,
-    totalExpenses: Double
-) {
-    val isDark = ThemeManager.getCurrentTheme()
-    // Theme-aware colors for income and expense
-    val incomeColor = if (isDark) Color(0xFF7CF49A) else Color(0xFF388E3C)
-    val expenseColor = if (isDark) Color(0xFFFFB4A9) else Color(0xFFD84315)
+// Função para mapear transações para ícones
+private fun getTransactionIcon(category: String, type: TransactionType) =
+    if (type == TransactionType.INCOME) getIncomeIcon(category) else getExpenseIcon(category)
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "Resumo do mês",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
+private fun getExpenseIcon(category: String) = when (category.lowercase()) {
+    "água" -> Icons.Rounded.WaterDrop
+    "energia" -> Icons.Rounded.Lightbulb
+    "internet" -> Icons.Rounded.Wifi
+    "telefone" -> Icons.Rounded.Phone
+    "alimentação" -> Icons.Rounded.Restaurant
+    "transporte" -> Icons.Rounded.DirectionsCar
+    else -> Icons.Rounded.ShoppingCart
+}
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        text = "Receitas",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "R$ ${formatDouble(totalIncome)}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                        color = incomeColor
-                    )
-                }
-
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "Gastos",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "R$ ${formatDouble(totalExpenses)}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                        color = expenseColor
-                    )
-                }
-            }
-
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Saldo do mês",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "R$ ${formatDouble(totalIncome - totalExpenses)}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = if (totalIncome - totalExpenses >= 0) incomeColor else expenseColor
-                )
-            }
-        }
-    }
+private fun getIncomeIcon(category: String) = when (category.lowercase()) {
+    "salário" -> Icons.Rounded.AttachMoney
+    "freelance" -> Icons.Rounded.Work
+    "investimento" -> Icons.Rounded.TrendingUp
+    "vendas" -> Icons.Rounded.Sell
+    "bonus" -> Icons.Rounded.EmojiEvents
+    else -> Icons.Rounded.AccountBalanceWallet
 }

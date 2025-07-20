@@ -61,4 +61,16 @@ class AuthRepositoryImpl(
     override suspend fun sendEmailVerification(): Boolean {
         return authDataSource.sendEmailVerification()
     }
+
+    override suspend fun updateUserProfile(
+        displayName: String?,
+        photoUrl: String?
+    ): AuthResult<Unit> {
+        return try {
+            authDataSource.updateUserProfile(displayName, photoUrl)
+            AuthResult.Success(Unit)
+        } catch (e: Exception) {
+            AuthResult.Error(e)
+        }
+    }
 }

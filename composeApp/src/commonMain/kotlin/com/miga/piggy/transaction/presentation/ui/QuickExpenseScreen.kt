@@ -1,4 +1,4 @@
-package com.miga.piggy.balance.presentation.ui
+package com.miga.piggy.transaction.presentation.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -14,24 +14,38 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.miga.piggy.balance.presentation.viewmodel.EditBalanceViewModel
-import com.miga.piggy.utils.formatters.formatDouble
+import com.miga.piggy.transaction.presentation.viewmodel.AddTransactionViewModel
+import com.miga.piggy.utils.datepicker.PlatformDatePicker
+import com.miga.piggy.utils.formatters.formatDate
 import com.miga.piggy.utils.theme.*
 import org.koin.compose.koinInject
 
-object EditBalanceScreen : Screen {
+class QuickExpenseScreen(
+    private val categoryName: String
+) : Screen {
+
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val viewModel: EditBalanceViewModel = koinInject()
+        val viewModel: AddTransactionViewModel = koinInject()
         val uiState by viewModel.uiState.collectAsState()
+
+        // Configurações específicas para cada categoria
+        val categoryConfig = getCategoryConfig(categoryName)
+
+        LaunchedEffect(Unit) {
+            viewModel.setTransactionType(com.miga.piggy.transaction.domain.entity.TransactionType.EXPENSE)
+            viewModel.selectCategoryByName(categoryName)
+            viewModel.updateDescription("Pagamento de $categoryName")
+        }
 
         LaunchedEffect(uiState.success) {
             if (uiState.success) {
@@ -65,11 +79,22 @@ object EditBalanceScreen : Screen {
                     ) {
                         TopAppBar(
                             title = {
-                                Text(
-                                    "Editar Saldo",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = categoryConfig.icon,
+                                        contentDescription = categoryName,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        "Adicionar $categoryName",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             },
                             navigationIcon = {
                                 IconButton(onClick = { navigator.pop() }) {
@@ -94,7 +119,7 @@ object EditBalanceScreen : Screen {
                         .padding(24.dp),
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    // Card do saldo atual com gradiente
+                    // Card da categoria com gradiente
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -104,49 +129,59 @@ object EditBalanceScreen : Screen {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(
-                                    brush = Brush.horizontalGradient(
-                                        colors = listOf(
-                                            Color(0xFF667eea),
-                                            Color(0xFF764ba2)
-                                        )
-                                    )
-                                )
+                                .background(categoryConfig.gradient)
                                 .padding(24.dp)
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.fillMaxWidth()
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.AccountBalanceWallet,
-                                        contentDescription = "Saldo",
-                                        tint = Color.White,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                Column {
                                     Text(
-                                        text = "Saldo Atual",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = Color.White,
+                                        text = "CATEGORIA",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White.copy(alpha = 0.8f),
                                         fontWeight = FontWeight.Medium
                                     )
+                                    Text(
+                                        text = categoryName.uppercase(),
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = categoryConfig.description,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color.White.copy(alpha = 0.9f)
+                                    )
                                 }
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Text(
-                                    text = "R$ ${formatDouble(uiState.currentBalance)}",
-                                    style = MaterialTheme.typography.headlineLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
+
+                                Card(
+                                    modifier = Modifier.size(80.dp),
+                                    shape = RoundedCornerShape(20.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color.White.copy(alpha = 0.2f)
+                                    )
+                                ) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = categoryConfig.icon,
+                                            contentDescription = categoryName,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(40.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
 
-                    // Card de edição
+                    // Card de entrada de dados
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
@@ -159,28 +194,11 @@ object EditBalanceScreen : Screen {
                             modifier = Modifier.padding(24.dp),
                             verticalArrangement = Arrangement.spacedBy(20.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Edit,
-                                    contentDescription = "Editar",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Novo Saldo",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-
+                            // Campo de valor
                             OutlinedTextField(
-                                value = uiState.balanceText,
-                                onValueChange = viewModel::updateBalanceText,
-                                label = { Text("Digite o novo saldo") },
+                                value = uiState.amount,
+                                onValueChange = viewModel::updateAmount,
+                                label = { Text("Valor do $categoryName") },
                                 leadingIcon = {
                                     Text(
                                         "R$",
@@ -204,31 +222,65 @@ object EditBalanceScreen : Screen {
                                 )
                             )
 
-                            // Botão salvar com gradiente
+                            // Campo de data
+                            var showDatePicker by remember { mutableStateOf(false) }
+
+                            OutlinedTextField(
+                                value = formatDate(uiState.selectedDate),
+                                onValueChange = { },
+                                label = { Text("Data do pagamento") },
+                                trailingIcon = {
+                                    IconButton(
+                                        onClick = { showDatePicker = true }
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.DateRange,
+                                            contentDescription = "Selecionar data",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                },
+                                readOnly = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = !uiState.isLoading,
+                                shape = RoundedCornerShape(16.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(
+                                        alpha = 0.5f
+                                    )
+                                )
+                            )
+
+                            if (showDatePicker) {
+                                PlatformDatePicker(
+                                    selectedDate = uiState.selectedDate,
+                                    onDateSelected = { selectedDate ->
+                                        viewModel.updateDate(selectedDate)
+                                        showDatePicker = false
+                                    },
+                                    onDismiss = { showDatePicker = false }
+                                )
+                            }
+
+                            // Botão salvar com gradiente da categoria
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(56.dp)
                                     .clip(RoundedCornerShape(16.dp)),
                                 onClick = {
-                                    if (!uiState.isLoading && uiState.balanceText.isNotBlank()) {
-                                        viewModel.saveBalance()
+                                    if (!uiState.isLoading && uiState.amount.isNotBlank()) {
+                                        viewModel.saveTransaction()
                                     }
                                 },
-                                enabled = !uiState.isLoading && uiState.balanceText.isNotBlank(),
+                                enabled = !uiState.isLoading && uiState.amount.isNotBlank(),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .background(
-                                            brush = Brush.horizontalGradient(
-                                                colors = listOf(
-                                                    MaterialTheme.colorScheme.primary,
-                                                    MaterialTheme.colorScheme.secondary
-                                                )
-                                            )
-                                        ),
+                                        .background(categoryConfig.gradient),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     if (uiState.isLoading) {
@@ -253,14 +305,14 @@ object EditBalanceScreen : Screen {
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Icon(
-                                                Icons.Rounded.Save,
+                                                imageVector = Icons.Rounded.Save,
                                                 contentDescription = "Salvar",
                                                 tint = Color.White,
                                                 modifier = Modifier.size(20.dp)
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Text(
-                                                text = "Salvar Saldo",
+                                                text = "Salvar $categoryName",
                                                 color = Color.White,
                                                 style = MaterialTheme.typography.titleMedium,
                                                 fontWeight = FontWeight.SemiBold
@@ -275,45 +327,47 @@ object EditBalanceScreen : Screen {
                     Spacer(modifier = Modifier.weight(1f))
                 }
             }
-
-            // Card de erro modernizado
-            uiState.error?.let { error ->
-                LaunchedEffect(error) {
-                    kotlinx.coroutines.delay(3000)
-                    viewModel.clearError()
-                }
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .align(Alignment.BottomCenter),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Rounded.Error,
-                            contentDescription = "Erro",
-                            tint = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = error,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
         }
+    }
+}
+
+// Configuração para cada categoria
+data class CategoryConfig(
+    val icon: ImageVector,
+    val gradient: Brush,
+    val description: String
+)
+
+private fun getCategoryConfig(categoryName: String): CategoryConfig {
+    return when (categoryName.lowercase()) {
+        "água" -> CategoryConfig(
+            icon = Icons.Rounded.WaterDrop,
+            gradient = PiggyGradients.WaterGradient,
+            description = "Conta de água mensal"
+        )
+
+        "energia" -> CategoryConfig(
+            icon = Icons.Rounded.Lightbulb,
+            gradient = PiggyGradients.PowerGradient,
+            description = "Conta de energia elétrica"
+        )
+
+        "internet" -> CategoryConfig(
+            icon = Icons.Rounded.Wifi,
+            gradient = PiggyGradients.WifiGradient,
+            description = "Plano de internet"
+        )
+
+        "telefone" -> CategoryConfig(
+            icon = Icons.Rounded.Phone,
+            gradient = PiggyGradients.PhoneGradient,
+            description = "Conta de telefone/celular"
+        )
+
+        else -> CategoryConfig(
+            icon = Icons.Rounded.ShoppingCart,
+            gradient = PiggyGradients.ExpenseGradient,
+            description = "Gasto geral"
+        )
     }
 }

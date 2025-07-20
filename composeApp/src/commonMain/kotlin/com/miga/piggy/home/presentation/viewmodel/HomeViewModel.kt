@@ -38,7 +38,8 @@ class HomeViewModel(
                     totalExpenses = summary.totalExpenses,
                     monthlyIncome = summary.monthlyIncome,
                     monthlyExpenses = summary.monthlyExpenses,
-                    expensesByCategory = summary.expensesByCategory
+                    expensesByCategory = summary.expensesByCategory,
+                    recentTransactions = summary.recentTransactions
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(

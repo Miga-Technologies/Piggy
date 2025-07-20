@@ -9,6 +9,7 @@ import com.miga.piggy.transaction.domain.entity.Transaction
 import com.miga.piggy.transaction.domain.entity.TransactionType
 import com.miga.piggy.transaction.domain.usecases.AddTransactionUseCase
 import com.miga.piggy.transaction.presentation.state.AddTransactionUiState
+import com.miga.piggy.utils.theme.DefaultCategories
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,9 +31,11 @@ class AddTransactionViewModel(
     private fun loadCategories() {
         viewModelScope.launch {
             try {
-                val categories = getCategoriesUseCase()
+                val userCategories = getCategoriesUseCase()
+                val allCategories =
+                    (userCategories + DefaultCategories.defaultCategories).distinctBy { it.name }
                 _uiState.value = _uiState.value.copy(
-                    categories = categories,
+                    categories = allCategories,
                     selectedCategory = null
                 )
             } catch (e: Exception) {
@@ -64,6 +67,13 @@ class AddTransactionViewModel(
 
     fun setIsCategoryDropdownExpanded(expanded: Boolean) {
         _uiState.value = _uiState.value.copy(isCategoryDropdownExpanded = expanded)
+    }
+
+    fun selectCategoryByName(categoryName: String) {
+        val category = (_uiState.value.categories + DefaultCategories.defaultCategories)
+            .distinctBy { it.name }
+            .firstOrNull { it.name == categoryName }
+        category?.let { selectCategory(it) }
     }
 
     fun updateDate(date: Long) {

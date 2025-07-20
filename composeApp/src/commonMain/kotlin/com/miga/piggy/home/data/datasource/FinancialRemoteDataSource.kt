@@ -166,14 +166,26 @@ class FinancialRemoteDataSourceImpl(
 
     private fun getDefaultCategories(): List<CategoryDto> {
         return listOf(
-            CategoryDto("1", "Alimentação", "EXPENSE", "#FF6200", true),
-            CategoryDto("2", "Transporte", "EXPENSE", "#03DAC6", true),
-            CategoryDto("3", "Lazer", "EXPENSE", "#6200EE", true),
-            CategoryDto("4", "Saúde", "EXPENSE", "#4CAF50", true),
-            CategoryDto("5", "Outros", "EXPENSE", "#FF5722", true),
-            CategoryDto("6", "Salário", "INCOME", "#4CAF50", true),
-            CategoryDto("7", "Freelance", "INCOME", "#03DAC6", true),
-            CategoryDto("8", "Investimentos", "INCOME", "#6200EE", true)
+            // Categorias essenciais com cores dos gradientes
+            CategoryDto("agua", "Água", "EXPENSE", "#29B6F6", true),
+            CategoryDto("energia", "Energia", "EXPENSE", "#FF9800", true),
+            CategoryDto("internet", "Internet", "EXPENSE", "#4CAF50", true),
+            CategoryDto("telefone", "Telefone", "EXPENSE", "#1E88E5", true),
+
+            // Outras categorias comuns
+            CategoryDto("alimentacao", "Alimentação", "EXPENSE", "#FF6200", true),
+            CategoryDto("transporte", "Transporte", "EXPENSE", "#03DAC6", true),
+            CategoryDto("lazer", "Lazer", "EXPENSE", "#9C27B0", true),
+            CategoryDto("saude", "Saúde", "EXPENSE", "#4CAF50", true),
+            CategoryDto("educacao", "Educação", "EXPENSE", "#2196F3", true),
+            CategoryDto("casa", "Casa", "EXPENSE", "#FF5722", true),
+            CategoryDto("outros_gastos", "Outros Gastos", "EXPENSE", "#607D8B", true),
+
+            // Categorias de receita
+            CategoryDto("salario", "Salário", "INCOME", "#4CAF50", true),
+            CategoryDto("freelance", "Freelance", "INCOME", "#03DAC6", true),
+            CategoryDto("investimentos", "Investimentos", "INCOME", "#9C27B0", true),
+            CategoryDto("outros_receitas", "Outras Receitas", "INCOME", "#FF9800", true)
         )
     }
 }

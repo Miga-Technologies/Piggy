@@ -9,6 +9,7 @@ import com.miga.piggy.auth.domain.usecase.GetCurrentUserUseCase
 import com.miga.piggy.auth.domain.usecase.LoginUseCase
 import com.miga.piggy.auth.domain.usecase.LogoutUseCase
 import com.miga.piggy.auth.domain.usecase.RegisterUseCase
+import com.miga.piggy.auth.domain.usecase.UpdateProfileImageUseCase
 import com.miga.piggy.auth.presentation.state.AuthUiState
 import com.miga.piggy.auth.presentation.state.LoginFormState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +22,8 @@ class AuthViewModel(
     private val registerUseCase: RegisterUseCase,
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val logoutUseCase: LogoutUseCase,
-    private val emailVerificationUseCase: EmailVerificationUseCase
+    private val emailVerificationUseCase: EmailVerificationUseCase,
+    private val updateProfileImageUseCase: UpdateProfileImageUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -313,5 +315,40 @@ class AuthViewModel(
 
     private fun clearForm() {
         _formState.value = LoginFormState()
+    }
+
+    fun updateProfileImage(imageData: ByteArray) {
+        val currentUser = _uiState.value.user
+        if (currentUser == null) {
+            _uiState.value = _uiState.value.copy(error = "Usuário não está logado")
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+
+            when (val result = updateProfileImageUseCase(currentUser.id, imageData)) {
+                is AuthResult.Success -> {
+                    // Atualizar o usuário com a nova URL da foto
+                    val updatedUser = currentUser.copy(photoUrl = result.data)
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        user = updatedUser,
+                        error = null
+                    )
+                }
+
+                is AuthResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = result.exception.message
+                    )
+                }
+
+                is AuthResult.Loading -> {
+                    _uiState.value = _uiState.value.copy(isLoading = true)
+                }
+            }
+        }
     }
 }

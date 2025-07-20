@@ -1,6 +1,7 @@
 package com.miga.piggy.home.domain.usecases.financial
 
 import com.miga.piggy.transaction.domain.entity.TransactionType
+import com.miga.piggy.transaction.domain.entity.Transaction
 import com.miga.piggy.balance.domain.usecases.GetBalanceUseCase
 import com.miga.piggy.transaction.domain.usecases.GetTransactionsUseCase
 import kotlinx.datetime.DateTimeUnit
@@ -19,7 +20,8 @@ data class FinancialSummary(
     val totalExpenses: Double,
     val monthlyIncome: Double,
     val monthlyExpenses: Double,
-    val expensesByCategory: Map<String, Double>
+    val expensesByCategory: Map<String, Double>,
+    val recentTransactions: List<Transaction>
 )
 
 class GetFinancialSummaryUseCase(
@@ -51,13 +53,16 @@ class GetFinancialSummaryUseCase(
             .groupBy { it.category }
             .mapValues { (_, transactions) -> transactions.sumOf { it.amount } }
 
+        val recentTransactions = transactions.sortedByDescending { it.date }.take(5)
+
         return FinancialSummary(
             balance = balance.amount,
             totalIncome = income.sumOf { it.amount },
             totalExpenses = expenses.sumOf { it.amount },
             monthlyIncome = monthlyIncome,
             monthlyExpenses = monthlyExpenses,
-            expensesByCategory = expensesByCategory
+            expensesByCategory = expensesByCategory,
+            recentTransactions = recentTransactions
         )
     }
 

@@ -10,4 +10,5 @@ interface AuthDataSource {
     suspend fun resetPassword(email: String)
     suspend fun isEmailVerified(): Boolean
     suspend fun sendEmailVerification(): Boolean
+    suspend fun updateUserProfile(displayName: String?, photoUrl: String?)
 }

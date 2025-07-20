@@ -3,7 +3,9 @@ package com.miga.piggy.di.module
 import com.miga.piggy.auth.data.datasource.AuthDataSource
 import com.miga.piggy.auth.data.datasource.FirebaseAuthDataSource
 import com.miga.piggy.auth.data.repository.AuthRepositoryImpl
+import com.miga.piggy.auth.data.repository.FirebaseImageRepository
 import com.miga.piggy.auth.domain.repository.AuthRepository
+import com.miga.piggy.auth.domain.repository.ImageRepository
 import com.miga.piggy.auth.domain.usecase.EmailVerificationUseCase
 import com.miga.piggy.auth.domain.usecase.EmailVerificationUseCaseImpl
 import com.miga.piggy.auth.domain.usecase.GetCurrentUserUseCase
@@ -14,6 +16,8 @@ import com.miga.piggy.auth.domain.usecase.LogoutUseCase
 import com.miga.piggy.auth.domain.usecase.LogoutUseCaseImpl
 import com.miga.piggy.auth.domain.usecase.RegisterUseCase
 import com.miga.piggy.auth.domain.usecase.RegisterUseCaseImpl
+import com.miga.piggy.auth.domain.usecase.UpdateProfileImageUseCase
+import com.miga.piggy.auth.domain.usecase.UpdateProfileImageUseCaseImpl
 import com.miga.piggy.auth.presentation.viewmodel.AuthViewModel
 import com.miga.piggy.home.presentation.viewmodel.HomeViewModel
 import com.miga.piggy.balance.presentation.viewmodel.EditBalanceViewModel
@@ -53,12 +57,14 @@ val appModule = module {
     single<AuthDataSource> { FirebaseAuthDataSource() }
 
     single<AuthRepository> { AuthRepositoryImpl(get()) }
+    single<ImageRepository> { FirebaseImageRepository() }
 
     single<LoginUseCase> { LoginUseCaseImpl(get()) }
     single<RegisterUseCase> { RegisterUseCaseImpl(get()) }
     single<GetCurrentUserUseCase> { GetCurrentUserUseCaseImpl(get()) }
     single<LogoutUseCase> { LogoutUseCaseImpl(get()) }
     single<EmailVerificationUseCase> { EmailVerificationUseCaseImpl(get()) }
+    single<UpdateProfileImageUseCase> { UpdateProfileImageUseCaseImpl(get(), get()) }
 
     single<FinancialRemoteDataSource> { FinancialRemoteDataSourceImpl(get()) }
 
@@ -85,6 +91,6 @@ val appModule = module {
     viewModelOf(::EditBalanceViewModel)
     viewModelOf(::AddTransactionViewModel)
     viewModelOf(::CategoryViewModel)
-    viewModelOf(::TransactionListViewModel)
+    factory { TransactionListViewModel(get(), get(), get()) }
     viewModelOf(::ReportsViewModel)
 }

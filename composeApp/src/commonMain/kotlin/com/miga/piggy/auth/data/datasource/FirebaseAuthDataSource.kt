@@ -49,6 +49,11 @@ class FirebaseAuthDataSource : AuthDataSource {
             false
         }
     }
+
+    override suspend fun updateUserProfile(displayName: String?, photoUrl: String?) {
+        val user = auth.currentUser ?: throw Exception("Usuário não autenticado")
+        user.updateProfile(displayName = displayName, photoUrl = photoUrl)
+    }
 }
 
 private fun FirebaseUser.toUser(): User {

@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.transitions.SlideTransition
 import com.miga.piggy.splash.SplashScreen
+import com.miga.piggy.utils.theme.PiggyTheme
 import org.koin.compose.KoinContext
 
 // Simple preference storage - could be replaced with proper SharedPreferences implementation
@@ -90,8 +91,8 @@ fun App() {
         val isDarkTheme by ThemeManager.isDarkTheme
         val useDarkTheme = isDarkTheme ?: systemInDarkTheme
 
-        MaterialTheme(
-            colorScheme = if (useDarkTheme) darkColorScheme() else lightColorScheme()
+        PiggyTheme(
+            darkTheme = useDarkTheme
         ) {
             // Garantir que o background cubra toda a tela
             androidx.compose.material3.Surface(
