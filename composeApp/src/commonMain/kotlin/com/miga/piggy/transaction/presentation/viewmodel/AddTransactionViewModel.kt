@@ -34,8 +34,14 @@ class AddTransactionViewModel(
                 val userCategories = getCategoriesUseCase()
                 val allCategories =
                     (userCategories + DefaultCategories.defaultCategories).distinctBy { it.name }
+
+                // Filtrar categorias pelo tipo de transação atual
+                val filteredCategories = allCategories.filter {
+                    it.type == _uiState.value.transactionType
+                }
+
                 _uiState.value = _uiState.value.copy(
-                    categories = allCategories,
+                    categories = filteredCategories,
                     selectedCategory = null
                 )
             } catch (e: Exception) {
@@ -47,8 +53,8 @@ class AddTransactionViewModel(
     }
 
     fun setTransactionType(type: TransactionType) {
-        _uiState.value = _uiState.value.copy(transactionType = type)
-        // Removed the loadCategories() call here
+        _uiState.value = _uiState.value.copy(transactionType = type, selectedCategory = null)
+        loadCategories() // Recarregar categorias quando o tipo mudar
     }
 
     fun updateAmount(amount: String) {
@@ -72,6 +78,7 @@ class AddTransactionViewModel(
     fun selectCategoryByName(categoryName: String) {
         val category = (_uiState.value.categories + DefaultCategories.defaultCategories)
             .distinctBy { it.name }
+            .filter { it.type == _uiState.value.transactionType }
             .firstOrNull { it.name == categoryName }
         category?.let { selectCategory(it) }
     }
@@ -87,11 +94,6 @@ class AddTransactionViewModel(
         // Validações
         if (state.amount.isBlank()) {
             _uiState.value = _uiState.value.copy(error = "Digite o valor da transação")
-            return
-        }
-
-        if (state.description.isBlank()) {
-            _uiState.value = _uiState.value.copy(error = "Digite uma descrição")
             return
         }
 
@@ -118,7 +120,7 @@ class AddTransactionViewModel(
                     type = state.transactionType,
                     amount = amount,
                     category = state.selectedCategory.name,
-                    description = state.description,
+                    description = state.description.ifBlank { "Sem descrição" },
                     date = state.selectedDate
                 )
 
@@ -147,5 +149,13 @@ class AddTransactionViewModel(
 
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun showCategoryError() {
+        _uiState.value = _uiState.value.copy(error = "Selecione uma categoria para continuar")
+    }
+
+    fun showAmountError() {
+        _uiState.value = _uiState.value.copy(error = "Digite um valor para continuar")
     }
 }

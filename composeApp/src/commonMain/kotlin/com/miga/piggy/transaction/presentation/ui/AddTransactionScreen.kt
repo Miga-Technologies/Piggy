@@ -202,7 +202,15 @@ class AddTransactionScreen(
                             ),
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
-                            enabled = !uiState.isLoading
+                            enabled = !uiState.isLoading,
+                            isError = uiState.error?.contains("valor", ignoreCase = true) == true,
+                            supportingText = if (uiState.error?.contains(
+                                    "valor",
+                                    ignoreCase = true
+                                ) == true
+                            ) {
+                                { Text("Digite um valor para continuar") }
+                            } else null
                         )
                     }
 
@@ -210,7 +218,7 @@ class AddTransactionScreen(
                         OutlinedTextField(
                             value = uiState.description,
                             onValueChange = viewModel::updateDescription,
-                            label = { Text("Descrição") },
+                            label = { Text("Descrição (opcional)") },
                             modifier = Modifier.fillMaxWidth(),
                             enabled = !uiState.isLoading,
                             maxLines = 3
@@ -231,6 +239,17 @@ class AddTransactionScreen(
                                         ?: "Selecione uma categoria",
                                     onValueChange = { },
                                     label = { Text("Categoria") },
+                                    isError = uiState.error?.contains(
+                                        "categoria",
+                                        ignoreCase = true
+                                    ) == true,
+                                    supportingText = if (uiState.error?.contains(
+                                            "categoria",
+                                            ignoreCase = true
+                                        ) == true
+                                    ) {
+                                        { Text("Selecione uma categoria para continuar") }
+                                    } else null,
                                     trailingIcon = {
                                         ExposedDropdownMenuDefaults.TrailingIcon(
                                             expanded = uiState.isCategoryDropdownExpanded
@@ -303,18 +322,23 @@ class AddTransactionScreen(
                                 .height(56.dp)
                                 .clip(RoundedCornerShape(16.dp)),
                             onClick = {
-                                if (!uiState.isLoading &&
-                                    uiState.amount.isNotBlank() &&
-                                    uiState.description.isNotBlank() &&
-                                    uiState.selectedCategory != null
-                                ) {
-                                    viewModel.saveTransaction()
+                                if (!uiState.isLoading) {
+                                    when {
+                                        uiState.amount.isBlank() -> {
+                                            viewModel.showAmountError()
+                                        }
+
+                                        uiState.selectedCategory == null -> {
+                                            viewModel.showCategoryError()
+                                        }
+
+                                        else -> {
+                                            viewModel.saveTransaction()
+                                        }
+                                    }
                                 }
                             },
-                            enabled = !uiState.isLoading &&
-                                    uiState.amount.isNotBlank() &&
-                                    uiState.description.isNotBlank() &&
-                                    uiState.selectedCategory != null,
+                            enabled = !uiState.isLoading,
                             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                         ) {
                             Box(

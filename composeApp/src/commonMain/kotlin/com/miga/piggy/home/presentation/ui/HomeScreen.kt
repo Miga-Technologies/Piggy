@@ -187,7 +187,11 @@ object HomeScreen : Screen {
                                             value = "R$ ${formatDouble(homeUiState.monthlyIncome)}",
                                             gradient = PiggyGradients.IncomeGradient,
                                             icon = Icons.AutoMirrored.Rounded.TrendingUp,
-                                            modifier = Modifier.weight(1f)
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clickable {
+                                                    navigator.push(ViewIncomeScreen)
+                                                }
                                         )
 
                                         GradientValueCard(
@@ -195,7 +199,11 @@ object HomeScreen : Screen {
                                             value = "R$ ${formatDouble(homeUiState.monthlyExpenses)}",
                                             gradient = PiggyGradients.ExpenseGradient,
                                             icon = Icons.AutoMirrored.Rounded.TrendingDown,
-                                            modifier = Modifier.weight(1f)
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clickable {
+                                                    navigator.push(ViewExpensesScreen)
+                                                }
                                         )
                                     }
                                 }
@@ -224,10 +232,7 @@ object HomeScreen : Screen {
                                     CreditCardCard(
                                         holderName = authUiState.user?.displayName ?: "Usuário",
                                         cardNumber = "•••• •••• •••• 1234",
-                                        balance = "R$ ${formatDouble(homeUiState.balance)}",
-                                        modifier = Modifier.clickable {
-                                            navigator.push(EditBalanceScreen)
-                                        }
+                                        balance = "R$ ${formatDouble(homeUiState.balance)}"
                                     )
                                 }
 
@@ -1180,13 +1185,17 @@ private fun getExpenseIcon(category: String) = when (category.lowercase()) {
     "telefone" -> Icons.Rounded.Phone
     "alimentação" -> Icons.Rounded.Restaurant
     "transporte" -> Icons.Rounded.DirectionsCar
+    "saúde" -> Icons.Rounded.LocalHospital
+    "educação" -> Icons.Rounded.School
     else -> Icons.Rounded.ShoppingCart
 }
 
 private fun getIncomeIcon(category: String) = when (category.lowercase()) {
     "salário" -> Icons.Rounded.AttachMoney
-    "investimento" -> Icons.Rounded.TrendingUp
+    "bônus" -> Icons.Rounded.EmojiEvents
+    "investimentos" -> Icons.Rounded.TrendingUp
+    "freelance" -> Icons.Rounded.Work
     "vendas" -> Icons.Rounded.Sell
-    "bonus" -> Icons.Rounded.EmojiEvents
+    "presente" -> Icons.Rounded.CardGiftcard
     else -> Icons.Rounded.AccountBalanceWallet
 }

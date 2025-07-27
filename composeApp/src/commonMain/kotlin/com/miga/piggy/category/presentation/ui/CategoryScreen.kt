@@ -28,6 +28,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.miga.piggy.category.presentation.viewmodel.CategoryViewModel
 import com.miga.piggy.home.domain.entity.Category
+import com.miga.piggy.transaction.domain.entity.TransactionType
 import com.miga.piggy.utils.parsers.ColorParser
 import com.miga.piggy.utils.theme.*
 import org.koin.compose.koinInject
@@ -374,6 +375,7 @@ object CategoryScreen : Screen {
                     formState = formState,
                     onNameChange = viewModel::updateName,
                     onColorChange = viewModel::updateColor,
+                    onTypeChange = viewModel::updateType,
                     onSave = viewModel::saveCategory,
                     onDismiss = viewModel::hideDialog,
                     isLoading = uiState.isLoading
@@ -626,10 +628,19 @@ private fun ModernCategoryDialog(
     formState: com.miga.piggy.category.presentation.viewmodel.CategoryFormState,
     onNameChange: (String) -> Unit,
     onColorChange: (String) -> Unit,
+    onTypeChange: (TransactionType) -> Unit,
     onSave: () -> Unit,
     onDismiss: () -> Unit,
     isLoading: Boolean
 ) {
+    var localName by remember { mutableStateOf(formState.name) }
+
+    LaunchedEffect(formState.name) {
+        if (localName != formState.name && formState.name.isEmpty()) {
+            localName = formState.name
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -655,8 +666,11 @@ private fun ModernCategoryDialog(
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 OutlinedTextField(
-                    value = formState.name,
-                    onValueChange = onNameChange,
+                    value = localName,
+                    onValueChange = { newValue ->
+                        localName = newValue
+                        onNameChange(newValue)
+                    },
                     label = { Text("Nome da categoria") },
                     leadingIcon = {
                         Icon(
@@ -670,11 +684,76 @@ private fun ModernCategoryDialog(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isLoading,
                     shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                     )
                 )
+
+                Column {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Rounded.Category,
+                            contentDescription = "Tipo",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Tipo de categoria",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TransactionType.entries.forEach { type ->
+                            Card(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp),
+                                onClick = {
+                                    if (!isLoading) {
+                                        onTypeChange(type)
+                                    }
+                                },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (formState.type == type)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = when (type) {
+                                            TransactionType.EXPENSE -> "Gasto"
+                                            TransactionType.INCOME -> "Receita"
+                                        },
+                                        color = if (formState.type == type)
+                                            Color.White
+                                        else
+                                            MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
 
                 Column {
                     Row(
@@ -706,7 +785,7 @@ private fun ModernCategoryDialog(
         confirmButton = {
             Card(
                 onClick = onSave,
-                enabled = !isLoading && formState.name.isNotBlank(),
+                enabled = !isLoading && localName.isNotBlank(),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.primary
                 ),

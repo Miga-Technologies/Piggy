@@ -24,6 +24,7 @@ data class CategoryUiState(
 data class CategoryFormState(
     val name: String = "",
     val color: String = "#6200EE",
+    val type: TransactionType = TransactionType.EXPENSE,
     val nameError: String? = null
 )
 
@@ -64,7 +65,7 @@ class CategoryViewModel(
 
     fun showAddDialog(initialType: TransactionType = TransactionType.EXPENSE) {
         _uiState.value = _uiState.value.copy(showAddDialog = true)
-        _formState.value = CategoryFormState()
+        _formState.value = CategoryFormState(type = initialType)
     }
 
     fun showEditDialog(category: Category) {
@@ -74,7 +75,8 @@ class CategoryViewModel(
         )
         _formState.value = CategoryFormState(
             name = category.name,
-            color = category.color
+            color = category.color,
+            type = category.type
         )
     }
 
@@ -94,6 +96,10 @@ class CategoryViewModel(
         _formState.value = _formState.value.copy(color = color)
     }
 
+    fun updateType(type: TransactionType) {
+        _formState.value = _formState.value.copy(type = type)
+    }
+
     fun saveCategory() {
         val form = _formState.value
         if (form.name.isBlank()) {
@@ -109,14 +115,15 @@ class CategoryViewModel(
                 if (editingCategory != null) {
                     val updatedCategory = editingCategory.copy(
                         name = form.name,
-                        color = form.color
+                        color = form.color,
+                        type = form.type
                     )
                     updateCategoryUseCase(updatedCategory)
                 } else {
                     val newCategory = Category(
                         id = "",
                         name = form.name,
-                        type = TransactionType.EXPENSE,
+                        type = form.type,
                         color = form.color,
                         isDefault = false
                     )

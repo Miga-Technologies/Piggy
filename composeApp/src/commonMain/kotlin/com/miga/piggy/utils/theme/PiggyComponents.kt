@@ -87,7 +87,7 @@ fun CreditCardCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(200.dp)
+            .height(180.dp) // Reduzir altura de 200dp para 180dp
             .clip(RoundedCornerShape(16.dp)),
         elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
     ) {
@@ -125,7 +125,7 @@ fun CreditCardCard(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp)
+                    .padding(16.dp) // Reduzir padding de 24dp para 16dp
             ) {
                 // Header row with chip and contactless
                 Row(
@@ -135,7 +135,7 @@ fun CreditCardCard(
                 ) {
                     // Chip do cartão
                     Card(
-                        modifier = Modifier.size(45.dp, 35.dp),
+                        modifier = Modifier.size(40.dp, 30.dp), // Reduzir tamanho do chip
                         colors = CardDefaults.cardColors(
                             containerColor = Color(0xFFFFD700).copy(alpha = 0.9f)
                         ),
@@ -162,14 +162,14 @@ fun CreditCardCard(
                                 repeat(3) {
                                     Box(
                                         modifier = Modifier
-                                            .width(25.dp)
-                                            .height(1.5.dp)
+                                            .width(20.dp) // Reduzir tamanho das linhas
+                                            .height(1.dp)
                                             .background(
                                                 Color(0xFF8B6914),
                                                 RoundedCornerShape(1.dp)
                                             )
                                     )
-                                    if (it < 2) Spacer(modifier = Modifier.height(3.dp))
+                                    if (it < 2) Spacer(modifier = Modifier.height(2.dp))
                                 }
                             }
                         }
@@ -184,14 +184,14 @@ fun CreditCardCard(
                             contentDescription = "Contactless",
                             tint = Color.White.copy(alpha = 0.8f),
                             modifier = Modifier
-                                .size(24.dp)
+                                .size(20.dp) // Reduzir tamanho do ícone
                                 .rotate(90f)
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Piggy",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 10.sp,
+                                fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold
                             ),
                             color = Color.White.copy(alpha = 0.7f)
@@ -199,16 +199,16 @@ fun CreditCardCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp)) // Reduzir espaçamento
 
                 // Número do cartão
                 Text(
                     text = cardNumber,
                     color = Color.White,
                     style = MaterialTheme.typography.headlineSmall.copy(
-                        fontSize = 20.sp,
+                        fontSize = 18.sp, // Reduzir fonte
                         fontWeight = FontWeight.Medium,
-                        letterSpacing = 3.sp
+                        letterSpacing = 2.sp
                     ),
                     fontFamily = FontFamily.Monospace
                 )
@@ -221,48 +221,54 @@ fun CreditCardCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Bottom
                 ) {
-                    Column {
+                    Column(
+                        modifier = Modifier.weight(1f) // Adicionar peso para controlar largura
+                    ) {
                         Text(
                             text = "PORTADOR",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 9.sp,
+                                fontSize = 8.sp,
                                 fontWeight = FontWeight.Medium,
-                                letterSpacing = 1.sp
+                                letterSpacing = 0.5.sp
                             ),
                             color = Color.White.copy(alpha = 0.7f)
                         )
                         Text(
                             text = holderName.uppercase(),
                             style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 14.sp,
+                                fontSize = 12.sp, // Reduzir fonte
                                 fontWeight = FontWeight.SemiBold,
-                                letterSpacing = 1.sp
+                                letterSpacing = 0.5.sp
                             ),
                             color = Color.White,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(6.dp)) // Reduzir espaçamento
 
                         Text(
                             text = "SALDO DISPONÍVEL",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 9.sp,
+                                fontSize = 8.sp,
                                 fontWeight = FontWeight.Medium,
-                                letterSpacing = 1.sp
+                                letterSpacing = 0.5.sp
                             ),
                             color = Color.White.copy(alpha = 0.7f)
                         )
                         Text(
                             text = balance,
                             style = MaterialTheme.typography.titleLarge.copy(
-                                fontSize = 18.sp,
+                                fontSize = 16.sp, // Reduzir fonte
                                 fontWeight = FontWeight.Bold
                             ),
-                            color = Color.White
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(8.dp)) // Adicionar espaço entre colunas
 
                     Column(
                         horizontalAlignment = Alignment.End
@@ -270,32 +276,32 @@ fun CreditCardCard(
                         Text(
                             text = "VÁLIDO ATÉ",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 9.sp,
+                                fontSize = 8.sp,
                                 fontWeight = FontWeight.Medium,
-                                letterSpacing = 1.sp
+                                letterSpacing = 0.5.sp
                             ),
                             color = Color.White.copy(alpha = 0.7f)
                         )
                         Text(
                             text = "12/28",
                             style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 14.sp,
+                                fontSize = 12.sp, // Reduzir fonte
                                 fontWeight = FontWeight.SemiBold,
-                                letterSpacing = 1.sp
+                                letterSpacing = 0.5.sp
                             ),
                             color = Color.White,
                             fontFamily = FontFamily.Monospace
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(6.dp)) // Reduzir espaçamento
 
                         // Logo da "bandeira" do cartão
                         Card(
-                            modifier = Modifier.size(50.dp, 30.dp),
+                            modifier = Modifier.size(45.dp, 25.dp), // Reduzir tamanho do logo
                             colors = CardDefaults.cardColors(
                                 containerColor = Color.White.copy(alpha = 0.95f)
                             ),
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(4.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
                             Box(
@@ -305,7 +311,7 @@ fun CreditCardCard(
                                 Text(
                                     text = "PIGGY",
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 8.sp,
+                                        fontSize = 7.sp, // Reduzir fonte
                                         fontWeight = FontWeight.Black,
                                         letterSpacing = 0.5.sp
                                     ),
@@ -435,31 +441,5 @@ fun TransactionItem(
                 color = if (amount.startsWith("-")) PiggyColors.Red500 else PiggyColors.Green500
             )
         }
-    }
-}
-
-/**
- * Botão flutuante customizado
- */
-@Composable
-fun PiggyFloatingActionButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    FloatingActionButton(
-        onClick = onClick,
-        modifier = modifier.size(56.dp),
-        containerColor = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
-        elevation = FloatingActionButtonDefaults.elevation(
-            defaultElevation = 8.dp,
-            pressedElevation = 12.dp
-        )
-    ) {
-        Icon(
-            imageVector = Icons.Rounded.Add,
-            contentDescription = "Adicionar",
-            modifier = Modifier.size(24.dp)
-        )
     }
 }
