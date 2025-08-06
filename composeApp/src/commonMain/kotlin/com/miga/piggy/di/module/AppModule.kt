@@ -18,9 +18,11 @@ import com.miga.piggy.auth.domain.usecase.LogoutUseCase
 import com.miga.piggy.auth.domain.usecase.LogoutUseCaseImpl
 import com.miga.piggy.auth.domain.usecase.RegisterUseCase
 import com.miga.piggy.auth.domain.usecase.RegisterUseCaseImpl
+import com.miga.piggy.auth.domain.usecase.ResetPasswordUseCase
 import com.miga.piggy.auth.domain.usecase.UpdateProfileImageUseCase
 import com.miga.piggy.auth.domain.usecase.UpdateProfileImageUseCaseImpl
 import com.miga.piggy.auth.presentation.viewmodel.AuthViewModel
+import com.miga.piggy.auth.presentation.viewmodel.ResetPasswordViewModel
 import com.miga.piggy.home.presentation.viewmodel.HomeViewModel
 import com.miga.piggy.balance.presentation.viewmodel.EditBalanceViewModel
 import com.miga.piggy.home.data.datasource.FinancialRemoteDataSource
@@ -68,6 +70,7 @@ val appModule = module {
     single<LogoutUseCase> { LogoutUseCaseImpl(get()) }
     single<EmailVerificationUseCase> { EmailVerificationUseCaseImpl(get()) }
     single<UpdateProfileImageUseCase> { UpdateProfileImageUseCaseImpl(get(), get()) }
+    single<ResetPasswordUseCase> { ResetPasswordUseCase(get()) }
 
     single<FinancialRemoteDataSource> { FinancialRemoteDataSourceImpl(get()) }
 
@@ -90,6 +93,7 @@ val appModule = module {
     factory { GetFinancialSummaryUseCase(get(), get()) }
 
     factory { AuthViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    factory { ResetPasswordViewModel(get()) }
     factory { HomeViewModel(get(), get(), get()) }
     viewModelOf(::EditBalanceViewModel)
     viewModelOf(::AddTransactionViewModel)

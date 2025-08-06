@@ -257,6 +257,23 @@ object AuthScreen : Screen {
                             )
                         }
 
+                        // Link para reset de senha
+                        TextButton(
+                            onClick = {
+                                focusManager.clearFocus()
+                                navigator.push(ResetPasswordScreen)
+                            },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Text(
+                                text = "Esqueceu sua senha?",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+
                         // Card de erro
                         uiState.error?.let { error ->
                             Spacer(modifier = Modifier.height(16.dp))

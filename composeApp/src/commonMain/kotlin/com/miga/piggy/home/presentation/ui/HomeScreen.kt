@@ -34,7 +34,6 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.miga.piggy.auth.presentation.ui.AuthScreen
 import com.miga.piggy.auth.presentation.viewmodel.AuthViewModel
-import com.miga.piggy.balance.presentation.ui.EditBalanceScreen
 import com.miga.piggy.category.presentation.ui.CategoryScreen
 import com.miga.piggy.home.domain.entity.Category
 import com.miga.piggy.home.presentation.viewmodel.HomeViewModel
@@ -232,7 +231,7 @@ object HomeScreen : Screen {
                                     CreditCardCard(
                                         holderName = authUiState.user?.displayName ?: "Usuário",
                                         cardNumber = "•••• •••• •••• 1234",
-                                        balance = "R$ ${formatDouble(homeUiState.balance)}"
+                                        balance = "R$ ${formatDouble(homeUiState.monthlyIncome - homeUiState.monthlyExpenses)}"
                                     )
                                 }
 
