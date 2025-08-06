@@ -7,6 +7,7 @@ import com.miga.piggy.transaction.domain.usecases.GetTransactionsUseCase
 import com.miga.piggy.transaction.domain.usecases.DeleteTransactionUseCase
 import com.miga.piggy.transaction.presentation.state.TransactionListUiState
 import com.miga.piggy.home.domain.repository.FinancialRepository
+import com.miga.piggy.utils.ui.MonthYear
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,16 +22,26 @@ class TransactionListViewModel(
     private val _uiState = MutableStateFlow(TransactionListUiState())
     val uiState: StateFlow<TransactionListUiState> = _uiState.asStateFlow()
 
-    fun loadTransactions(userId: String, type: TransactionType) {
+    fun loadTransactions(userId: String, type: TransactionType, selectedMonth: MonthYear? = null) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            val monthToUse = selectedMonth ?: _uiState.value.selectedMonth
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                error = null,
+                selectedMonth = monthToUse
+            )
 
             try {
-                val transactions = repository.getTransactionsByType(userId, type)
-                    .sortedByDescending { it.date }
+                val allTransactions = repository.getTransactionsByType(userId, type)
+
+                // Filter by selected month
+                val monthRange = monthToUse.getMonthRange()
+                val filteredTransactions = allTransactions.filter { transaction ->
+                    transaction.date >= monthRange.first && transaction.date <= monthRange.second
+                }.sortedByDescending { it.date }
 
                 _uiState.value = _uiState.value.copy(
-                    transactions = transactions,
+                    transactions = filteredTransactions,
                     isLoading = false
                 )
             } catch (e: Exception) {
@@ -42,16 +53,26 @@ class TransactionListViewModel(
         }
     }
 
-    fun loadAllTransactions(userId: String) {
+    fun loadAllTransactions(userId: String, selectedMonth: MonthYear? = null) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            val monthToUse = selectedMonth ?: _uiState.value.selectedMonth
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                error = null,
+                selectedMonth = monthToUse
+            )
 
             try {
-                val transactions = getTransactionsUseCase(userId)
-                    .sortedByDescending { it.date }
+                val allTransactions = getTransactionsUseCase(userId)
+
+                // Filter by selected month
+                val monthRange = monthToUse.getMonthRange()
+                val filteredTransactions = allTransactions.filter { transaction ->
+                    transaction.date >= monthRange.first && transaction.date <= monthRange.second
+                }.sortedByDescending { it.date }
 
                 _uiState.value = _uiState.value.copy(
-                    transactions = transactions,
+                    transactions = filteredTransactions,
                     isLoading = false
                 )
             } catch (e: Exception) {
@@ -61,6 +82,13 @@ class TransactionListViewModel(
                 )
             }
         }
+    }
+
+    /**
+     * Changes the selected month and reloads transactions
+     */
+    fun changeSelectedMonth(userId: String, monthYear: MonthYear, type: TransactionType) {
+        loadTransactions(userId, type, monthYear)
     }
 
     fun clearError() {

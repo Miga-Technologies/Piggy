@@ -28,6 +28,7 @@ import com.miga.piggy.transaction.presentation.viewmodel.TransactionListViewMode
 import com.miga.piggy.utils.formatters.formatDouble
 import com.miga.piggy.utils.formatters.formatDate
 import com.miga.piggy.utils.theme.*
+import com.miga.piggy.utils.ui.MonthSelector
 import org.koin.compose.koinInject
 
 object ViewIncomeScreen : Screen {
@@ -80,90 +81,115 @@ object ViewIncomeScreen : Screen {
                         ),
                         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                     ) {
-                        TopAppBar(
-                            title = {
-                                if (selectionMode) {
-                                    Text(
-                                        "${selectedTransactions.size} selecionada${if (selectedTransactions.size == 1) "" else "s"}",
-                                        style = MaterialTheme.typography.headlineMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                } else {
-                                    Text(
-                                        "Receitas",
-                                        style = MaterialTheme.typography.headlineMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            },
-                            navigationIcon = {
-                                if (selectionMode) {
-                                    IconButton(onClick = {
-                                        selectionMode = false
-                                        selectedTransactions = emptySet()
-                                    }) {
-                                        Icon(
-                                            Icons.Rounded.Close,
-                                            "Sair da seleção",
-                                            tint = MaterialTheme.colorScheme.onSurface
+                        Column(
+                            modifier = Modifier.padding(24.dp)
+                        ) {
+                            TopAppBar(
+                                title = {
+                                    if (selectionMode) {
+                                        Text(
+                                            "${selectedTransactions.size} selecionada${if (selectedTransactions.size == 1) "" else "s"}",
+                                            style = MaterialTheme.typography.headlineMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    } else {
+                                        Text(
+                                            "Receitas",
+                                            style = MaterialTheme.typography.headlineMedium,
+                                            fontWeight = FontWeight.Bold
                                         )
                                     }
-                                } else {
-                                    IconButton(onClick = { navigator.pop() }) {
-                                        Icon(
-                                            Icons.AutoMirrored.Rounded.ArrowBack,
-                                            "Voltar",
-                                            tint = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-                                }
-                            },
-                            actions = {
-                                if (selectionMode) {
-                                    if (selectedTransactions.isNotEmpty()) {
+                                },
+                                navigationIcon = {
+                                    if (selectionMode) {
                                         IconButton(onClick = {
-                                            authState.user?.id?.let { userId ->
-                                                selectedTransactions.forEach { transactionId ->
-                                                    viewModel.deleteTransaction(
-                                                        userId,
-                                                        transactionId,
-                                                        TransactionType.INCOME
-                                                    )
-                                                }
-                                            }
                                             selectionMode = false
                                             selectedTransactions = emptySet()
                                         }) {
                                             Icon(
-                                                Icons.Rounded.Delete,
-                                                "Deletar selecionadas",
-                                                tint = MaterialTheme.colorScheme.error
+                                                Icons.Rounded.Close,
+                                                "Sair da seleção",
+                                                tint = MaterialTheme.colorScheme.onSurface
                                             )
                                         }
-                                    }
-                                } else {
-                                    if (uiState.transactions.isNotEmpty()) {
-                                        IconButton(onClick = { selectionMode = true }) {
+                                    } else {
+                                        IconButton(onClick = { navigator.pop() }) {
                                             Icon(
-                                                Icons.Rounded.Checklist,
-                                                "Modo seleção",
+                                                Icons.AutoMirrored.Rounded.ArrowBack,
+                                                "Voltar",
                                                 tint = MaterialTheme.colorScheme.onSurface
                                             )
                                         }
                                     }
-                                    IconButton(onClick = { filterDialogOpen = true }) {
-                                        Icon(
-                                            Icons.Rounded.FilterList,
-                                            "Filtros",
-                                            tint = MaterialTheme.colorScheme.onSurface
-                                        )
+                                },
+                                actions = {
+                                    if (selectionMode) {
+                                        if (selectedTransactions.isNotEmpty()) {
+                                            IconButton(onClick = {
+                                                authState.user?.id?.let { userId ->
+                                                    selectedTransactions.forEach { transactionId ->
+                                                        viewModel.deleteTransaction(
+                                                            userId,
+                                                            transactionId,
+                                                            TransactionType.INCOME
+                                                        )
+                                                    }
+                                                }
+                                                selectionMode = false
+                                                selectedTransactions = emptySet()
+                                            }) {
+                                                Icon(
+                                                    Icons.Rounded.Delete,
+                                                    "Deletar selecionadas",
+                                                    tint = MaterialTheme.colorScheme.error
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        if (uiState.transactions.isNotEmpty()) {
+                                            IconButton(onClick = { selectionMode = true }) {
+                                                Icon(
+                                                    Icons.Rounded.Checklist,
+                                                    "Modo seleção",
+                                                    tint = MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
+                                        }
+                                        IconButton(onClick = { filterDialogOpen = true }) {
+                                            Icon(
+                                                Icons.Rounded.FilterList,
+                                                "Filtros",
+                                                tint = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
                                     }
-                                }
-                            },
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = Color.Transparent
+                                },
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = Color.Transparent
+                                )
                             )
-                        )
+
+                            if (!selectionMode) {
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                // Month selector
+                                MonthSelector(
+                                    selectedMonth = uiState.selectedMonth,
+                                    onMonthSelected = { monthYear ->
+                                        authState.user?.id?.let { userId ->
+                                            viewModel.changeSelectedMonth(
+                                                userId,
+                                                monthYear,
+                                                TransactionType.INCOME
+                                            )
+                                            // Reset category filter when month changes
+                                            selectedCategory = null
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
                     }
                 }
             ) { paddingValues ->

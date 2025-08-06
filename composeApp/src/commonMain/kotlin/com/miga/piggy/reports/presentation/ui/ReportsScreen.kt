@@ -25,6 +25,7 @@ import com.miga.piggy.reports.presentation.viewmodel.ReportsViewModel
 import com.miga.piggy.transaction.domain.entity.TransactionType
 import com.miga.piggy.utils.formatters.formatDouble
 import com.miga.piggy.utils.theme.*
+import com.miga.piggy.utils.ui.MonthSelector
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -71,65 +72,82 @@ object ReportsScreen : Screen {
                         ),
                         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                     ) {
-                        TopAppBar(
-                            title = {
-                                Text(
-                                    "Relatórios",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            },
-                            navigationIcon = {
-                                IconButton(onClick = { navigator.pop() }) {
-                                    Icon(
-                                        Icons.AutoMirrored.Rounded.ArrowBack,
-                                        "Voltar",
-                                        tint = MaterialTheme.colorScheme.onSurface
+                        Column(
+                            modifier = Modifier.padding(24.dp)
+                        ) {
+                            TopAppBar(
+                                title = {
+                                    Text(
+                                        "Relatórios",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.Bold
                                     )
-                                }
-                            },
-                            actions = {
-                                Card(
-                                    onClick = {
-                                        scope.launch {
-                                            authState.user?.id?.let {
-                                                reportsViewModel.exportToPdf()
-                                            }
-                                        }
-                                    },
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                                    ),
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.padding(8.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(
-                                            horizontal = 12.dp,
-                                            vertical = 8.dp
-                                        ),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
+                                },
+                                navigationIcon = {
+                                    IconButton(onClick = { navigator.pop() }) {
                                         Icon(
-                                            Icons.Rounded.PictureAsPdf,
-                                            "Exportar PDF",
-                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            "PDF",
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.SemiBold
+                                            Icons.AutoMirrored.Rounded.ArrowBack,
+                                            "Voltar",
+                                            tint = MaterialTheme.colorScheme.onSurface
                                         )
                                     }
-                                }
-                            },
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = Color.Transparent
+                                },
+                                actions = {
+                                    Card(
+                                        onClick = {
+                                            scope.launch {
+                                                authState.user?.id?.let {
+                                                    reportsViewModel.exportToPdf()
+                                                }
+                                            }
+                                        },
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                                        ),
+                                        shape = RoundedCornerShape(12.dp),
+                                        modifier = Modifier.padding(8.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(
+                                                horizontal = 12.dp,
+                                                vertical = 8.dp
+                                            ),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.PictureAsPdf,
+                                                "Exportar PDF",
+                                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                "PDF",
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        }
+                                    }
+                                },
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = Color.Transparent
+                                )
                             )
-                        )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Month selector
+                            MonthSelector(
+                                selectedMonth = reportsState.selectedMonth,
+                                onMonthSelected = { monthYear ->
+                                    authState.user?.id?.let { userId ->
+                                        reportsViewModel.changeSelectedMonth(userId, monthYear)
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
             ) { paddingValues ->
@@ -152,6 +170,7 @@ object ReportsScreen : Screen {
                     ) {
                         item {
                             MonthlySummaryCard(
+                                selectedMonth = reportsState.selectedMonth,
                                 totalIncome = reportsState.monthlyIncome,
                                 totalExpenses = reportsState.monthlyExpenses,
                                 balance = reportsState.monthlyBalance
@@ -193,7 +212,7 @@ object ReportsScreen : Screen {
                         if (reportsState.recentTransactions.isNotEmpty()) {
                             item {
                                 Text(
-                                    text = "Transações Recentes",
+                                    text = "Transações do Mês",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onBackground,
@@ -201,7 +220,7 @@ object ReportsScreen : Screen {
                                 )
                             }
 
-                            items(reportsState.recentTransactions.take(5)) { transaction ->
+                            items(reportsState.recentTransactions.take(10)) { transaction ->
                                 TransactionItem(
                                     title = transaction.category,
                                     subtitle = transaction.description.ifEmpty { "Sem descrição" },
@@ -216,6 +235,45 @@ object ReportsScreen : Screen {
                                     iconBackgroundColor = if (transaction.type == TransactionType.INCOME)
                                         PiggyColors.Green500 else PiggyColors.Red500
                                 )
+                            }
+                        } else {
+                            item {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surface
+                                    )
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(24.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.Receipt,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(48.dp),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                alpha = 0.6f
+                                            )
+                                        )
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        Text(
+                                            text = "Nenhuma transação neste mês",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = "Selecione outro mês ou adicione transações",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                alpha = 0.7f
+                                            )
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -253,6 +311,7 @@ object ReportsScreen : Screen {
 
 @Composable
 private fun MonthlySummaryCard(
+    selectedMonth: com.miga.piggy.utils.ui.MonthYear,
     totalIncome: Double,
     totalExpenses: Double,
     balance: Double
@@ -280,7 +339,7 @@ private fun MonthlySummaryCard(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Resumo do Mês",
+                    text = "Resumo de ${selectedMonth.monthName} ${selectedMonth.year}",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface

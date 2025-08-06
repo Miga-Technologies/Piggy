@@ -8,6 +8,7 @@ import com.miga.piggy.home.presentation.state.HomeUiState
 import com.miga.piggy.transaction.domain.entity.Transaction
 import com.miga.piggy.transaction.domain.entity.TransactionType
 import com.miga.piggy.transaction.domain.usecases.AddTransactionUseCase
+import com.miga.piggy.utils.ui.MonthYear
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,12 +32,13 @@ class HomeViewModel(
 
     fun loadFinancialData() {
         val userId = authViewModel.uiState.value.user?.id ?: return
+        val selectedMonth = _uiState.value.selectedMonth
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             try {
-                val summary = getFinancialSummaryUseCase(userId)
+                val summary = getFinancialSummaryUseCase(userId, selectedMonth)
 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -55,6 +57,14 @@ class HomeViewModel(
                 )
             }
         }
+    }
+
+    /**
+     * Changes the selected month and reloads financial data
+     */
+    fun changeSelectedMonth(monthYear: MonthYear) {
+        _uiState.value = _uiState.value.copy(selectedMonth = monthYear)
+        loadFinancialData()
     }
 
     /**

@@ -56,6 +56,7 @@ import com.miga.piggy.utils.formatters.formatDate
 import com.miga.piggy.utils.ui.ProfileImagePicker
 import com.miga.piggy.utils.ImagePickerWithPermissions
 import com.miga.piggy.utils.ui.ImageSelectionDialog
+import com.miga.piggy.utils.ui.MonthSelector
 
 object HomeScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -175,7 +176,20 @@ object HomeScreen : Screen {
                                         }
                                     }
 
-                                    Spacer(modifier = Modifier.height(24.dp))
+                                    Spacer(modifier = Modifier.height(20.dp))
+
+                                    // Month selector
+                                    MonthSelector(
+                                        selectedMonth = homeUiState.selectedMonth,
+                                        onMonthSelected = { monthYear ->
+                                            homeViewModel.changeSelectedMonth(monthYear)
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(40.dp)
+                                    )
+
+                                    Spacer(modifier = Modifier.height(16.dp))
 
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),

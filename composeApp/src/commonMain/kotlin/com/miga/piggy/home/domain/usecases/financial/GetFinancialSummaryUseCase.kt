@@ -4,6 +4,7 @@ import com.miga.piggy.transaction.domain.entity.TransactionType
 import com.miga.piggy.transaction.domain.entity.Transaction
 import com.miga.piggy.balance.domain.usecases.GetBalanceUseCase
 import com.miga.piggy.transaction.domain.usecases.GetTransactionsUseCase
+import com.miga.piggy.utils.ui.MonthYear
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -28,13 +29,16 @@ class GetFinancialSummaryUseCase(
     private val getBalanceUseCase: GetBalanceUseCase,
     private val getTransactionsUseCase: GetTransactionsUseCase
 ) {
-    suspend operator fun invoke(userId: String): FinancialSummary {
+    /**
+     * Get financial summary for a specific month
+     */
+    suspend operator fun invoke(userId: String, selectedMonth: MonthYear): FinancialSummary {
         val balance = getBalanceUseCase(userId)
         val transactions = getTransactionsUseCase(userId)
 
-        val currentMonth = getCurrentMonthRange()
+        val monthRange = selectedMonth.getMonthRange()
         val monthlyTransactions = transactions.filter {
-            it.date >= currentMonth.first && it.date <= currentMonth.second
+            it.date >= monthRange.first && it.date <= monthRange.second
         }
 
         val income = transactions.filter { it.type == TransactionType.INCOME }
@@ -53,7 +57,8 @@ class GetFinancialSummaryUseCase(
             .groupBy { it.category }
             .mapValues { (_, transactions) -> transactions.sumOf { it.amount } }
 
-        val recentTransactions = transactions.sortedByDescending { it.date }.take(5)
+        // Recent transactions from selected month
+        val recentTransactions = monthlyTransactions.sortedByDescending { it.date }.take(5)
 
         return FinancialSummary(
             balance = balance.amount,
@@ -66,6 +71,12 @@ class GetFinancialSummaryUseCase(
         )
     }
 
+    /**
+     * Get financial summary for current month (backward compatibility)
+     */
+    suspend operator fun invoke(userId: String): FinancialSummary {
+        return invoke(userId, MonthYear.current())
+    }
 
     @OptIn(ExperimentalTime::class)
     private fun getCurrentMonthRange(): Pair<Long, Long> {

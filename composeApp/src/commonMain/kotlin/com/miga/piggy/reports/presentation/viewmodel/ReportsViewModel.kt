@@ -6,6 +6,7 @@ import com.miga.piggy.home.domain.repository.FinancialRepository
 import com.miga.piggy.reports.presentation.state.ReportsUiState
 import com.miga.piggy.reports.utils.PdfExporter
 import com.miga.piggy.transaction.domain.entity.TransactionType
+import com.miga.piggy.utils.ui.MonthYear
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,46 +26,46 @@ class ReportsViewModel(
     private val _uiState = MutableStateFlow(ReportsUiState())
     val uiState: StateFlow<ReportsUiState> = _uiState.asStateFlow()
 
-    fun loadReports(userId: String) {
+    fun loadReports(userId: String, selectedMonth: MonthYear = MonthYear.current()) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                error = null,
+                selectedMonth = selectedMonth
+            )
 
             try {
-                val now = Clock.System.now()
-                val currentDateTime = now.toLocalDateTime(TimeZone.currentSystemDefault())
-                val currentMonth = currentDateTime.month
-                val currentYear = currentDateTime.year
-
-                // Get all transactions for current month
+                // Get all transactions
                 val allTransactions = repository.getTransactions(userId)
-                val currentMonthTransactions = allTransactions.filter { transaction ->
-                    val transactionDate = Instant.fromEpochMilliseconds(transaction.date)
-                        .toLocalDateTime(TimeZone.currentSystemDefault())
-                    transactionDate.month == currentMonth && transactionDate.year == currentYear
+
+                // Filter transactions for selected month
+                val monthRange = selectedMonth.getMonthRange()
+                val monthlyTransactions = allTransactions.filter { transaction ->
+                    transaction.date >= monthRange.first && transaction.date <= monthRange.second
                 }
 
                 // Calculate monthly income and expenses
-                val monthlyIncome = currentMonthTransactions
+                val monthlyIncome = monthlyTransactions
                     .filter { it.type == TransactionType.INCOME }
                     .sumOf { it.amount }
 
-                val monthlyExpenses = currentMonthTransactions
+                val monthlyExpenses = monthlyTransactions
                     .filter { it.type == TransactionType.EXPENSE }
                     .sumOf { it.amount }
 
                 // Group by category
-                val expensesByCategory = currentMonthTransactions
+                val expensesByCategory = monthlyTransactions
                     .filter { it.type == TransactionType.EXPENSE }
                     .groupBy { it.category }
                     .mapValues { (_, transactions) -> transactions.sumOf { it.amount } }
 
-                val incomeByCategory = currentMonthTransactions
+                val incomeByCategory = monthlyTransactions
                     .filter { it.type == TransactionType.INCOME }
                     .groupBy { it.category }
                     .mapValues { (_, transactions) -> transactions.sumOf { it.amount } }
 
-                // Get recent transactions (last 10)
-                val recentTransactions = allTransactions
+                // Get recent transactions from selected month
+                val recentTransactions = monthlyTransactions
                     .sortedByDescending { it.date }
                     .take(10)
 
@@ -84,6 +85,13 @@ class ReportsViewModel(
                 )
             }
         }
+    }
+
+    /**
+     * Changes the selected month and reloads reports
+     */
+    fun changeSelectedMonth(userId: String, monthYear: MonthYear) {
+        loadReports(userId, monthYear)
     }
 
     fun exportToPdf() {
